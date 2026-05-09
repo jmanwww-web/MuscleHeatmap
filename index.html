@@ -1251,6 +1251,182 @@
       font-size: 11px;
       margin-top: 4px;
     }
+
+    /* ── Mobile bottom nav ──────────────────────────────────────── */
+    .mobile-nav {
+      display: none;
+    }
+
+    /* ── Mobile overrides ───────────────────────────────────────── */
+    @media (max-width: 768px) {
+
+      html,
+      body {
+        height: auto;
+        overflow: auto;
+        overflow-x: hidden;
+      }
+
+      body {
+        padding-bottom: 56px;
+        /* clearance for fixed bottom nav */
+      }
+
+      header {
+        padding: 10px 16px;
+        gap: 10px;
+      }
+
+      .tagline {
+        display: none;
+      }
+
+      .logo {
+        font-size: 18px;
+      }
+
+      /* Flat single-column layout */
+      .app {
+        display: block;
+        min-height: 0;
+      }
+
+      /* Each panel shown/hidden by data-view on .app */
+      .sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        overflow: visible;
+        height: auto;
+        min-height: 0;
+      }
+
+      .right-panel {
+        width: 100%;
+        overflow: visible;
+        height: auto;
+      }
+
+      /* Default: show input view */
+      .app[data-view="results"] .sidebar {
+        display: none;
+      }
+
+      .app[data-view="input"] .right-panel {
+        display: none;
+      }
+
+      /* Allow ex-list to grow naturally instead of flex-scroll */
+      .ex-list-wrap {
+        overflow-y: visible;
+        flex: none;
+        max-height: none;
+        min-height: 60px;
+      }
+
+      /* Heatmap panel: remove fixed-height scroll, let page scroll */
+      .heatmap-panel {
+        overflow: visible;
+        height: auto;
+        padding: 16px 12px 24px;
+      }
+
+      /* Sidebar internal layout */
+      .sidebar-top {
+        padding: 14px 14px 10px;
+      }
+
+      .split-section {
+        padding: 14px 14px 10px;
+      }
+
+      .sidebar-calc {
+        padding: 10px 14px 14px;
+      }
+
+      /* Heatmap SVG cards — scale down to fit narrow screens */
+      .views-row {
+        gap: 16px;
+      }
+
+      .svg-card {
+        width: 160px;
+        padding: 10px;
+      }
+
+      /* Score banner full width */
+      .score-banner {
+        max-width: 100%;
+      }
+
+      /* Table: hide the raw column and group column on mobile */
+      .score-table th:nth-child(2),
+      .score-table td:nth-child(2),
+      .score-table th:nth-child(4),
+      .score-table td:nth-child(4) {
+        display: none;
+      }
+
+      .mini-bar {
+        width: 52px;
+      }
+
+      /* Bottom nav */
+      .mobile-nav {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 52px;
+        background: var(--s1);
+        border-top: 1px solid var(--border);
+        z-index: 1000;
+      }
+
+      .mobile-nav-btn {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        background: transparent;
+        border: none;
+        color: var(--dim);
+        font-family: 'Barlow', sans-serif;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: .04em;
+        cursor: pointer;
+        transition: color .15s;
+        padding: 6px 0;
+      }
+
+      .mobile-nav-btn .nav-icon {
+        font-size: 16px;
+        line-height: 1;
+      }
+
+      .mobile-nav-btn.active {
+        color: var(--accent);
+      }
+
+      .mobile-nav-btn.active .nav-icon {
+        opacity: 1;
+      }
+
+      .mobile-nav-divider {
+        width: 1px;
+        background: var(--border);
+        margin: 8px 0;
+      }
+
+      /* Touch tooltip — shown on tap, not hover */
+      .tt {
+        max-width: calc(100vw - 24px);
+      }
+    }
   </style>
 </head>
 
@@ -1273,7 +1449,7 @@
     <span class="logo">Muscle Heatmap</span>
     <span class="tagline">Relative Training Balance Analyzer</span>
   </header>
-  <div class="app">
+  <div class="app" id="appRoot" data-view="input">
 
     <!-- ── Sidebar ────────────────────────────────────── -->
     <div class="sidebar">
@@ -1568,6 +1744,13 @@
         <div id="ttContribs"></div>
       </div>
     </div>
+
+    <!-- ── Mobile navigation ────────────────────────────────────── -->
+    <nav class="mobile-nav" id="mobileNav">
+      <button class="mobile-nav-btn active" data-view="input" onclick="setMobileView('input')">...</button>
+      <div class="mobile-nav-divider"></div>
+      <button class="mobile-nav-btn" data-view="results" onclick="setMobileView('results')">...</button>
+    </nav>
 
     <script>
       // ── Data ──────────────────────────────────────────────────────────────────────
