@@ -1,0 +1,2376 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Muscle Heatmap</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #09090e;
+      --s1: #111118;
+      --s2: #181822;
+      --s3: #1f1f2e;
+      --border: #272738;
+      --text: #dddde8;
+      --dim: #6868a0;
+      --accent: #5c8ef8;
+      --accent2: #1c3060;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: 'Barlow', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--s1);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 28px;
+      display: flex;
+      align-items: baseline;
+      gap: 18px;
+      flex-shrink: 0;
+    }
+
+    .logo {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #5c8ef8, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .tagline {
+      font-size: 11px;
+      color: var(--dim);
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    /* ── Layout ── */
+    .app {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      flex: 1;
+      min-height: 0;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      background: var(--s1);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sidebar-top {
+      padding: 18px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--dim);
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    .form-group {
+      margin-bottom: 10px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--dim);
+      margin-bottom: 5px;
+    }
+
+    select,
+    input[type=number] {
+      width: 100%;
+      background: var(--s3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 10px;
+      font-family: 'Barlow', sans-serif;
+      font-size: 13px;
+      border-radius: 6px;
+      outline: none;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+
+    select:focus,
+    input:focus {
+      border-color: var(--accent);
+    }
+
+    .row3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+
+    .row2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .btn-add {
+      width: 100%;
+      padding: 10px;
+      background: var(--accent);
+      border: none;
+      border-radius: 6px;
+      color: #fff;
+      font-family: 'Barlow', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: .03em;
+      cursor: pointer;
+      transition: background .15s;
+      margin-top: 4px;
+    }
+
+    .btn-add:hover {
+      background: #4a7de0;
+    }
+
+    /* ── Typeahead ── */
+    .ex-search-wrap {
+      position: relative;
+    }
+
+    .ex-search-input {
+      width: 100%;
+      background: var(--s3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 10px;
+      font-family: 'Barlow', sans-serif;
+      font-size: 13px;
+      border-radius: 6px;
+      outline: none;
+    }
+
+    .ex-search-input:focus {
+      border-color: var(--accent);
+    }
+
+    .ex-search-input::placeholder {
+      color: var(--dim);
+      font-style: italic;
+    }
+
+    .ex-dropdown {
+      display: none;
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      background: var(--s2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      z-index: 500;
+      max-height: 220px;
+      overflow-y: auto;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, .5);
+    }
+
+    .ex-dropdown.open {
+      display: block;
+    }
+
+    .ex-dropdown::-webkit-scrollbar {
+      width: 3px;
+    }
+
+    .ex-dropdown::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 2px;
+    }
+
+    .ex-dg-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8px;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: var(--dim);
+      padding: 7px 11px 3px;
+      display: block;
+    }
+
+    .ex-di {
+      padding: 7px 11px;
+      font-size: 12px;
+      cursor: pointer;
+      border-radius: 4px;
+      margin: 1px 4px;
+      transition: background .1s;
+    }
+
+    .ex-di:hover,
+    .ex-di.focused {
+      background: var(--s3);
+      color: var(--accent);
+    }
+
+    /* ── Day tabs ── */
+    .day-tabs {
+      display: none;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      overflow-x: auto;
+      background: var(--s1);
+    }
+
+    .day-tabs::-webkit-scrollbar {
+      height: 0;
+    }
+
+    .day-tab {
+      flex: 1;
+      padding: 9px 6px 7px;
+      font-family: 'Barlow', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      text-align: center;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--dim);
+      transition: color .15s, border-color .15s;
+      white-space: nowrap;
+      min-width: 0;
+      letter-spacing: .02em;
+    }
+
+    .day-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    .day-tab:hover:not(.active) {
+      color: var(--text);
+    }
+
+    .tab-freq {
+      display: block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8px;
+      letter-spacing: .08em;
+      margin-top: 1px;
+      opacity: .55;
+    }
+
+    /* ── Split section ── */
+    .split-section {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .split-days {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 8px;
+      min-height: 20px;
+    }
+
+    .split-day-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      padding: 3px 9px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      color: var(--dim);
+      background: var(--s3);
+      white-space: nowrap;
+    }
+
+    .split-day-tag b {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    /* ── Custom split editor ── */
+    .custom-split-editor {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .custom-day-row {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .custom-day-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--dim);
+      width: 14px;
+      flex-shrink: 0;
+      text-align: right;
+    }
+
+    .custom-day-input {
+      flex: 1;
+      background: var(--s3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 9px;
+      font-family: 'Barlow', sans-serif;
+      font-size: 12px;
+      border-radius: 5px;
+      outline: none;
+      min-width: 0;
+    }
+
+    .custom-day-input:focus {
+      border-color: var(--accent);
+    }
+
+    .btn-remove-day {
+      background: transparent;
+      border: 1px solid #5c3030;
+      color: #f87171;
+      border-radius: 4px;
+      width: 24px;
+      height: 24px;
+      font-size: 10px;
+      cursor: pointer;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .15s;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .btn-remove-day:hover {
+      background: #3d1515;
+    }
+
+    .btn-add-day {
+      margin-top: 3px;
+      padding: 6px 10px;
+      background: transparent;
+      border: 1px dashed var(--border);
+      border-radius: 5px;
+      color: var(--dim);
+      font-family: 'Barlow', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: border-color .15s, color .15s;
+      text-align: center;
+      width: 100%;
+    }
+
+    .btn-add-day:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* ── Custom day frequency ── */
+    .custom-col-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--dim);
+    }
+
+    /* !important is required to beat the global: select { width: 100% } */
+    .custom-day-freq-sel {
+      width: 58px !important;
+      flex-shrink: 0;
+      background: var(--s3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 5px 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      border-radius: 5px;
+      outline: none;
+      appearance: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+    }
+
+    .custom-day-freq-sel:focus {
+      border-color: var(--accent);
+    }
+
+    .custom-freq-unit {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      color: var(--dim);
+      flex-shrink: 0;
+      white-space: nowrap;
+      line-height: 1;
+    }
+
+    .btn-add-day:disabled {
+      opacity: .35;
+      cursor: not-allowed;
+      border-color: var(--border);
+      color: var(--dim);
+    }
+
+    /* ── Day select ── */
+    .day-group {
+      margin-top: 6px;
+    }
+
+    /* ── Split-change confirmation modal ── */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .65);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-box {
+      background: var(--s2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 26px 28px 22px;
+      width: 320px;
+      max-width: calc(100vw - 40px);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, .6);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .modal-title {
+      font-family: 'Barlow', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .modal-body {
+      font-size: 13px;
+      color: var(--dim);
+      line-height: 1.6;
+    }
+
+    .modal-body b {
+      color: var(--text);
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 6px;
+      justify-content: flex-end;
+    }
+
+    .btn-modal-cancel {
+      padding: 7px 16px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--dim);
+      font-family: 'Barlow', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s;
+    }
+
+    .btn-modal-cancel:hover {
+      border-color: #5a5a7a;
+      color: var(--text);
+    }
+
+    .btn-modal-confirm {
+      padding: 7px 16px;
+      background: #7c2d2d;
+      border: 1px solid #a33;
+      border-radius: 6px;
+      color: #fca5a5;
+      font-family: 'Barlow', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .15s;
+    }
+
+    .btn-modal-confirm:hover {
+      background: #9b2c2c;
+    }
+
+    /* ── Calculate button ── */
+    .sidebar-calc {
+      padding: 14px 18px;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .btn-calc {
+      width: 100%;
+      padding: 11px;
+      background: linear-gradient(135deg, #5c8ef8, #a78bfa);
+      border: none;
+      border-radius: 6px;
+      color: #fff;
+      font-family: 'Barlow', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: .05em;
+      cursor: pointer;
+      transition: opacity .15s;
+    }
+
+    .btn-calc:hover {
+      opacity: .85;
+    }
+
+    /* ── Exercise list ── */
+    .ex-list-wrap {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 18px;
+    }
+
+    .ex-list-wrap::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .ex-list-wrap::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .ex-list-wrap::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 2px;
+    }
+
+    .empty-msg {
+      text-align: center;
+      padding: 30px 10px;
+      color: var(--dim);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .ex-item {
+      background: var(--s2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+      position: relative;
+    }
+
+    .ex-item:not(.editing):hover {
+      border-color: #3a3a5a;
+      background: #1a1a28;
+    }
+
+    .ex-item:not(.editing):hover .ex-edit-hint {
+      opacity: 1;
+    }
+
+    .ex-item.editing {
+      border-color: var(--accent);
+      background: #131325;
+      cursor: default;
+    }
+
+    .ex-name {
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.3;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .ex-meta {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--dim);
+      margin-top: 3px;
+    }
+
+    .ex-edit-hint {
+      position: absolute;
+      top: 9px;
+      right: 50px;
+      font-size: 10px;
+      color: var(--dim);
+      opacity: 0;
+      transition: opacity .15s;
+      pointer-events: none;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: .04em;
+    }
+
+    /* ── Inline edit fields ── */
+    .ex-edit-fields {
+      display: flex;
+      gap: 7px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .ex-edit-field {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      flex: 1;
+      min-width: 56px;
+    }
+
+    .ex-edit-field label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--dim);
+    }
+
+    .ex-edit-field select,
+    .ex-edit-field input[type=number] {
+      width: 100%;
+      background: var(--s3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 5px 7px;
+      font-family: 'Barlow', sans-serif;
+      font-size: 12px;
+      border-radius: 5px;
+      outline: none;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+
+    .ex-edit-field select:focus,
+    .ex-edit-field input[type=number]:focus {
+      border-color: var(--accent);
+    }
+
+    .ex-edit-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 10px;
+      align-items: center;
+    }
+
+    .btn-save {
+      padding: 5px 14px;
+      background: var(--accent);
+      border: none;
+      border-radius: 5px;
+      color: #fff;
+      font-family: 'Barlow', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .15s;
+    }
+
+    .btn-save:hover {
+      background: #4a7de0;
+    }
+
+    .btn-cancel-edit {
+      padding: 5px 10px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--dim);
+      font-family: 'Barlow', sans-serif;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all .15s;
+    }
+
+    .btn-cancel-edit:hover {
+      border-color: #5a5a7a;
+      color: var(--text);
+    }
+
+    .btn-del {
+      background: transparent;
+      border: 1px solid #5c3030;
+      color: #f87171;
+      border-radius: 4px;
+      padding: 3px 8px;
+      font-size: 10px;
+      font-family: 'Barlow', sans-serif;
+      font-weight: 600;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all .15s;
+    }
+
+    .btn-del:hover {
+      background: #3d1515;
+    }
+
+    /* ── Heatmap panel ── */
+    .heatmap-panel {
+      overflow-y: auto;
+      padding: 28px 36px;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 28px;
+    }
+
+    .heatmap-panel.visible {
+      display: flex;
+    }
+
+    .right-panel {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-height: 0;
+      flex: 1;
+    }
+
+    .heatmap-placeholder {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      color: var(--dim);
+      font-size: 13px;
+      line-height: 1.7;
+      text-align: center;
+      padding: 40px;
+    }
+
+    .heatmap-placeholder .ph-icon {
+      font-size: 38px;
+      opacity: .2;
+      margin-bottom: 6px;
+    }
+
+    .heatmap-placeholder strong {
+      color: var(--text);
+      display: block;
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .heatmap-panel::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    .heatmap-panel::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .heatmap-panel::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+
+    .views-row {
+      display: flex;
+      gap: 32px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .view-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .view-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--dim);
+    }
+
+    .svg-card {
+      background: var(--s1);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      width: 200px;
+    }
+
+    .svg-card svg {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    /* ── Legend ── */
+    .legend-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .legend-bar {
+      width: 240px;
+      height: 10px;
+      border-radius: 5px;
+      background: linear-gradient(to right,
+          #1565c0 0%,
+          #42a5f5 25%,
+          #26a69a 50%,
+          #ffa726 75%,
+          #ef5350 100%);
+      box-shadow: 0 0 12px rgba(92, 142, 248, 0.15);
+    }
+
+    .legend-labels {
+      display: flex;
+      justify-content: space-between;
+      width: 240px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      color: var(--dim);
+    }
+
+    /* ── Overall Score Banner ── */
+    .score-banner {
+      width: 100%;
+      max-width: 720px;
+      background: var(--s1);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-shrink: 0;
+    }
+
+    .score-ring-wrap {
+      position: relative;
+      width: 56px;
+      height: 56px;
+      flex-shrink: 0;
+    }
+
+    .score-ring {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: conic-gradient(var(--border) 0%, var(--border) 100%);
+      transition: background 0.5s;
+    }
+
+    .score-ring::before {
+      content: '';
+      position: absolute;
+      inset: 7px;
+      border-radius: 50%;
+      background: var(--s1);
+    }
+
+    .score-ring-inner {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .score-number {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 22px;
+      font-weight: 800;
+      line-height: 1;
+      transition: color 0.4s;
+      position: relative;
+      z-index: 1;
+    }
+
+    .score-text {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      flex-shrink: 0;
+    }
+
+    .score-grade {
+      font-family: 'Barlow', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: .02em;
+      transition: color 0.4s;
+      color: var(--dim);
+      min-height: 20px;
+    }
+
+    .score-divider {
+      width: 1px;
+      height: 38px;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+
+    .score-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .spill {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      padding: 3px 9px;
+      border-radius: 20px;
+      border: 1px solid;
+      white-space: nowrap;
+    }
+
+    .spill-balanced {
+      color: #66bb6a;
+      border-color: rgba(102, 187, 106, 0.25);
+      background: rgba(102, 187, 106, 0.07);
+    }
+
+    .spill-under {
+      color: #42a5f5;
+      border-color: rgba(66, 165, 245, 0.25);
+      background: rgba(66, 165, 245, 0.07);
+    }
+
+    .spill-over {
+      color: #ef5350;
+      border-color: rgba(239, 83, 80, 0.25);
+      background: rgba(239, 83, 80, 0.07);
+    }
+
+    .spill-none {
+      color: var(--dim);
+      border-color: rgba(104, 104, 160, 0.2);
+      background: rgba(104, 104, 160, 0.05);
+    }
+
+    /* ── Score table ── */
+    .table-section {
+      width: 100%;
+      max-width: 720px;
+    }
+
+    .table-section .label {
+      margin-bottom: 12px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    th {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--dim);
+      text-align: left;
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+    }
+
+    td {
+      padding: 6px 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .bar-cell {
+      white-space: nowrap;
+    }
+
+    .mini-bar {
+      display: inline-block;
+      vertical-align: middle;
+      width: 80px;
+      height: 5px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-right: 8px;
+    }
+
+    .mini-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width .5s, background-color .5s;
+    }
+
+    .score-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      vertical-align: middle;
+    }
+
+    .no-stim {
+      color: var(--dim);
+      font-style: italic;
+    }
+
+    /* ── RIR info tooltip ── */
+    .rir-label-wrap {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .info-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      border: 1px solid var(--dim);
+      color: var(--dim);
+      font-size: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      cursor: default;
+      flex-shrink: 0;
+      position: relative;
+      line-height: 1;
+      user-select: none;
+    }
+
+    .info-icon .rir-tooltip {
+      display: none;
+      position: absolute;
+      left: 0;
+      bottom: calc(100% + 7px);
+      top: auto;
+      transform: none;
+      max-width: calc(100vw - 32px);
+      background: var(--s2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 13px;
+      width: 210px;
+      z-index: 900;
+      pointer-events: none;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, .55);
+      font-family: 'Barlow', sans-serif;
+      font-size: 11px;
+      font-weight: 400;
+      color: var(--text);
+      line-height: 1.55;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    .info-icon .rir-tooltip b {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .info-icon:hover .rir-tooltip {
+      display: block;
+    }
+
+    /* ── Tooltip ── */
+    .tt {
+      position: fixed;
+      background: var(--s2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      pointer-events: none;
+      z-index: 999;
+      display: none;
+      min-width: 160px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, .5);
+    }
+
+    .tt-name {
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .tt-score {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--dim);
+    }
+
+    .tt-hint {
+      font-size: 11px;
+      margin-top: 4px;
+    }
+
+    .tt-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 7px 0 5px;
+    }
+
+    .tt-contribs-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--dim);
+      margin-bottom: 5px;
+    }
+
+    .tt-contrib-row {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 4px;
+    }
+
+    .tt-contrib-name {
+      font-size: 11px;
+      flex: 1;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tt-contrib-bar-wrap {
+      width: 52px;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .tt-contrib-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      background: var(--accent);
+      transition: width .3s;
+    }
+
+    .tt-contrib-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--dim);
+      flex-shrink: 0;
+      width: 26px;
+      text-align: right;
+    }
+
+    .tt-contrib-more {
+      font-size: 10px;
+      color: var(--dim);
+      font-style: italic;
+      margin-top: 2px;
+    }
+
+    .tt-score {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--dim);
+    }
+
+    .tt-hint {
+      font-size: 11px;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="modal-backdrop" id="splitModal">
+    <div class="modal-box">
+      <div class="modal-title">Change training split?</div>
+      <div class="modal-body">
+        Switching splits will <b>clear all exercises</b> from your current workout.
+        This cannot be undone.
+      </div>
+      <div class="modal-actions">
+        <button class="btn-modal-cancel" onclick="cancelSplitChange()">Keep current</button>
+        <button class="btn-modal-confirm" onclick="confirmSplitChange()">Clear &amp; switch</button>
+      </div>
+    </div>
+  </div>
+
+  <header>
+    <span class="logo">Muscle Heatmap</span>
+    <span class="tagline">Relative Training Balance Analyzer</span>
+  </header>
+  <div class="app">
+
+    <!-- ── Sidebar ────────────────────────────────────── -->
+    <div class="sidebar">
+      <div class="split-section">
+        <span class="label">Training Split</span>
+        <div class="form-group">
+          <select id="selSplit" onchange="requestSplitChange(this.value)">
+            <option value="none">No Split (Single Workout)</option>
+            <option value="ppl">Push / Pull / Legs</option>
+            <option value="ul">Upper / Lower</option>
+            <option value="fb">Full Body</option>
+            <option value="custom">Custom Split</option>
+          </select>
+        </div>
+        <div class="split-days" id="splitDays"></div>
+        <div class="custom-split-editor" id="customSplitEditor" style="display:none">
+          <div id="customDayList"></div>
+          <button class="btn-add-day" onclick="addCustomDay()">+ Add Day</button>
+        </div>
+      </div>
+      <div class="sidebar-top">
+        <span class="label">Add Exercise</span>
+        <div class="form-group">
+          <label>Exercise</label>
+          <div class="ex-search-wrap">
+            <input type="text" id="inpExercise" class="ex-search-input" placeholder="Search exercises…"
+              autocomplete="off" oninput="filterExercises()" onfocus="filterExercises()"
+              onkeydown="exerciseKeyNav(event)"
+              onblur="setTimeout(()=>document.getElementById('exDropdown').classList.remove('open'),150)">
+            <div class="ex-dropdown" id="exDropdown"></div>
+          </div>
+        </div>
+        <div class="row3">
+          <div class="form-group">
+            <label>Sets</label>
+            <input type="number" id="inpSets" value="3" min="1" max="30">
+          </div>
+          <div class="form-group">
+            <label>
+              <span class="rir-label-wrap">
+                RIR
+                <span class="info-icon">?
+                  <span class="rir-tooltip">
+                    <b>Reps In Reserve (RIR)</b> — how many reps you could still perform before reaching
+                    failure.<br><br>
+                    <b>0</b> = set taken to failure<br>
+                    <b>1–2</b> = very hard, approaching failure<br>
+                    <b>3–4</b> = challenging but comfortable<br>
+                    <b>5+</b> = far from failure<br>
+                  </span>
+                </span>
+              </span>
+            </label>
+            <select id="selRIR">
+              <option value="0">0 (failure)</option>
+              <option value="1" selected>1-2 RIR</option>
+              <option value="3">3-4 RIR</option>
+              <option value="5">5+ RIR</option>
+              <option value="5">Unsure</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Load</label>
+            <select id="selLoad">
+              <option value="light">Light</option>
+              <option value="moderate" selected>Moderate</option>
+              <option value="heavy">Heavy</option>
+              <option value="very_heavy">Very Heavy</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn-add" onclick="addExercise()">+ Add to Workout</button>
+      </div>
+      <div class="day-tabs" id="dayTabs"></div>
+      <div class="ex-list-wrap" id="exList">
+        <div class="empty-msg" id="emptyMsg">Add exercises above<br>to see your training balance</div>
+      </div>
+      <div class="sidebar-calc">
+        <button class="btn-calc" onclick="calcAndShow()">▶ Calculate Heatmap</button>
+      </div>
+    </div>
+
+    <!-- ── Right panel ─────────────────────────────────── -->
+    <div class="right-panel">
+      <div class="heatmap-placeholder" id="heatmapPlaceholder">
+        <div class="ph-icon">◈</div>
+        <div>
+          <strong>Ready to analyze</strong>
+          Select a training split, add your exercises to each day,<br>then click <b
+            style="color:var(--accent)">Calculate Heatmap</b>.
+        </div>
+      </div>
+      <!-- ── Heatmap panel ───────────────────────────────── -->
+      <div class="heatmap-panel">
+        <div class="score-banner" id="scoreBanner">
+          <div class="score-ring-wrap">
+            <div class="score-ring" id="overallScoreRing"></div>
+            <div class="score-ring-inner">
+              <span class="score-number" id="overallScoreNum">—</span>
+            </div>
+          </div>
+          <div class="score-text">
+            <span class="label" style="margin-bottom:4px">Balance Score</span>
+            <span class="score-grade" id="overallScoreGrade"></span>
+          </div>
+          <div class="score-divider"></div>
+          <div class="score-pills" id="scorePills">
+            <span style="font-size:11px;color:var(--dim);font-style:italic">Add exercises to see your balance
+              score</span>
+          </div>
+        </div>
+        <div class="views-row">
+          <div class="view-wrap">
+            <div class="view-label">Anterior</div>
+            <div class="svg-card" id="cardAnterior">
+              <svg viewBox="-27 0 210 297" xmlns="http://www.w3.org/2000/svg" id="svgAnterior">
+                <path id="biceps_brachii" data-muscle="biceps_brachii"
+                  d="m 50.012447,55.369744 -1.287259,0.34675 -3.258706,2.033984 -1.357551,1.688269 -1.143338,1.871978 -0.499454,0.941287 -0.897713,3.267937 -0.498002,2.002039 -0.410281,1.601327 -0.256926,3.959836 0.08268,4.19535 0.519348,2.986381 0.651463,1.593117 0.924562,0.685744 0.977826,0.101854 1.4087,0.409279 1.961121,-1.219565 1.574062,-1.750796 1.591635,-2.156976 1.873229,-3.97311 0.530241,-2.569641 0.665594,-3.116606 0.488341,-2.553333 0.39946,-3.679362 -0.08888,-2.553332 v -0.866098 l -2.618962,-3.116088 z m 55.846723,0 -1.29863,0.130225 -2.55385,3.116088 v 0.866098 l -0.0863,2.553332 0.38912,3.679362 0.31956,2.602026 0.59495,3.186941 0.77692,2.387457 1.85823,3.942734 1.47123,2.250508 1.99109,1.948202 1.86138,1.038695 1.21182,-0.519347 1.03869,-0.04341 0.73588,-0.433049 0.77928,-1.904278 0.51934,-2.986381 0.12971,-3.982185 -0.30282,-3.938778 -0.38964,-1.558044 -0.43305,-2.0345 -0.90847,-2.467034 -0.69299,-1.904793 -1.25522,-1.860868 -1.38492,-1.688269 -3.11609,-2.033984 z"
+                  fill="rgba(255,255,255,0.06)" stroke="none" class="muscle-path"
+                  style="cursor:pointer;transition:fill 0.4s ease;" />
+                <path id="lateral_deltoid" data-muscle="lateral_deltoid"
+                  d="m 51.711569,38.099999 -3.073199,0.77928 -2.640147,1.384929 -2.337327,1.991093 -1.471744,1.947685 -1.168403,1.860868 -0.995804,2.467549 -0.562759,2.769857 v 4.068484 l 0.562759,2.597259 0.649054,1.601451 0.952397,1.774568 0.839743,0.90899 0.998905,-1.882572 -0.280604,-2.316138 -0.216006,-2.293917 -0.130225,-1.860867 0.173117,-2.510441 0.389638,-1.817978 0.562756,-1.861384 0.779283,-1.73116 1.125511,-1.904278 1.169955,-1.60197 1.383377,-1.34152 1.731679,-1.384927 1.774569,-0.77928 z m 52.005611,0 -0.22841,0.865581 1.87069,0.77928 1.82521,1.384927 1.45831,1.34152 1.23351,1.60197 1.18598,1.904278 0.82165,1.73116 0.59273,1.861384 0.41083,1.817978 0.18242,2.510441 -0.13695,1.860867 -0.22789,2.293917 -0.29559,2.316138 1.05265,1.882572 0.88522,-0.90899 1.00407,-1.774568 0.6842,-1.601451 0.59324,-2.597259 V 51.30126 l -0.59324,-2.769857 -1.04955,-2.467549 -1.23197,-1.860868 -1.55081,-1.947685 -2.46393,-1.991093 -2.78329,-1.384929 z"
+                  fill="rgba(255,255,255,0.06)" stroke="none" class="muscle-path"
+                  style="cursor:pointer;transition:fill 0.4s ease;" />
+                <path id="pectoralis_major_sternocostal" data-muscle="pectoralis_major_sternocostal"
+                  d="m 81.510267,43.488299 -0.90899,0.389641 -0.995804,1.125514 -0.562755,1.082103 -0.36897,1.6645 0.121955,14.393436 0.506947,1.861383 1.125513,1.255221 2.856672,1.211812 2.553848,0.519348 2.510444,0.259932 2.726446,-0.303339 2.337327,-0.605647 2.770372,-1.342038 1.947686,-1.731161 2.293912,-2.467033 2.83497,-3.852476 2.44585,-3.202906 z m -7.176307,0.108522 -24.195421,10.258287 2.445846,3.202905 2.834968,3.852479 2.293916,2.467033 1.947685,1.731161 2.770373,1.342036 2.337326,0.605647 2.726449,0.303342 2.510441,-0.259932 2.553848,-0.519348 2.856675,-1.211813 1.125511,-1.25522 0.506947,-1.861386 0.121957,-14.393437 -0.368972,-1.664496 -0.562756,-1.082106 -0.995804,-1.125511 z"
+                  fill="rgba(255,255,255,0.06)" stroke="none" class="muscle-path"
+                  style="cursor:pointer;transition:fill 0.4s ease;" />
+                <path id="pectoralis_major_clavicular" data-muscle="pectoralis_major_clavicular"
+                  d="m 93.629424,40.718442 -3.462837,0.346234 -3.332615,0.649055 -4.414716,1.384929 -0.908989,0.389639 24.195423,10.25829 0.17311,-0.173117 -2.81378,-3.765661 -1.55804,-2.467033 -1.558047,-2.293916 c 0,0 -2.640647,-2.510817 -2.81378,-2.640666 -0.173133,-0.12985 -2.467033,-1.514637 -2.467033,-1.514637 z m -31.414622,0.108522 -1.038696,0.173117 c 0,0 -2.2939,1.384786 -2.467033,1.514636 -0.173132,0.12985 -2.81378,2.640666 -2.81378,2.640666 l -1.558044,2.293916 -1.558046,2.467034 -2.813781,3.765661 0.173117,0.173114 L 74.33396,43.596821 73.424973,43.207179 69.010255,41.822252 65.67764,41.173195 Z"
+                  fill="rgba(255,255,255,0.06)" stroke="none" class="muscle-path"
+                  style="cursor:pointer;transition:fill 0.4s ease;" />
+                <path id="rectus_femoris" data-muscle="rectus_femoris"
+                  d="m 58.109112,114.53822 -0.735872,1.60146 -0.216009,2.25102 -0.389641,1.47123 -0.562756,3.76566 -0.259932,4.50154 0.04341,4.93458 0.389641,4.71754 0.562756,5.84357 0.908989,5.49682 1.601451,6.75205 1.34152,4.71805 0.606166,2.0774 0.47594,2.0345 0.389639,2.38073 0.389641,2.81326 0.822172,0.98449 1.039087,0.27102 0.692198,-0.32497 0.346625,-0.80083 v -4.02508 l 0.346231,-2.98638 0.519348,-3.46283 0.519348,-3.24632 0.259416,-5.06429 v -4.1553 l -0.389123,-3.93878 -0.216524,-2.25051 -0.216524,-1.34203 -1.68827,-4.50102 -0.995288,-2.72696 -1.082103,-2.85668 -0.735873,-2.1208 -0.865582,-2.72696 -1.125511,-3.33313 -0.47594,-1.64435 -0.47594,-1.73167 z m 39.612567,0 -0.822172,3.37603 -0.476456,1.73167 -0.47594,1.64435 -1.125511,3.33313 -0.865582,2.72696 -0.735873,2.1208 -1.082103,2.85668 -0.995288,2.72696 -1.68827,4.50102 -0.216524,1.34203 -0.216009,2.25051 -0.389638,3.93878 v 4.1553 l 0.259416,5.06429 0.519348,3.24632 0.519864,3.46283 0.346233,2.98638 v 4.02508 l 0.51924,0.75755 0.606147,0.37907 0.800513,-0.0222 1.008295,-1.04507 0.35501,-3.01238 0.389639,-2.38073 0.47594,-2.0345 0.606166,-2.07739 1.341519,-4.71806 1.60197,-6.75204 0.908471,-5.49682 0.562756,-5.84358 0.389641,-4.71754 0.04341,-4.93458 -0.259932,-4.50153 -0.56224,-3.76566 -0.389641,-1.47123 -0.216525,-2.25103 z"
+                  fill="rgba(255,255,255,0.06)" stroke="none" class="muscle-path"
+                  style="cursor:pointer;transition:fill 0.4s ease;" />
+                <path id="vastus_medialis" data-muscle="vastus_medialis"
+                  d="m 66.592831,140.89785 0.108003,1.12552 0.108521,1.12499 0.194821,1.96939 0.194302,1.96939 v 2.07791 2.07739 l -0.129707,2.53215 -0.129709,2.53214 -0.259932,1.62316 -0.259416,1.62316 -0.259932,1.73116 -0.432533,3.2246 -0.173114,1.49345 v 2.0128 2.01228 l 0.346231,2.07791 0.432533,1.73116 0.865579,1.64486 1.168921,1.29863 h 0.735873 l 0.844044,-0.12978 1.687915,-2.2186 1.017177,-3.53808 0.519348,-3.28972 v -3.85248 l -0.216524,-3.46232 -0.649055,-3.50625 -0.562755,-2.51044 -0.865582,-2.76986 -0.735872,-2.38073 -0.995289,-2.33732 -1.125511,-2.76986 z m 22.645129,0 -1.428337,3.11661 -1.124995,2.76986 -0.995805,2.33732 -0.735872,2.38073 -0.865582,2.76986 -0.562755,2.51044 -0.649055,3.50625 -0.216524,3.46232 v 3.85248 l 0.519348,3.28972 1.082103,3.2892 1.287542,2.03465 0.963075,0.73574 1.017215,-0.0757 1.277128,-1.36356 0.692446,-1.67732 0.433049,-1.73116 0.346233,-2.07791 v -2.01228 -2.0128 l -0.173116,-1.49345 -0.433049,-3.2246 -0.259932,-1.73116 -0.259416,-1.62316 -0.259932,-1.62316 -0.129709,-2.53214 -0.129707,-2.53215 v -2.07739 -2.07791 l 0.19482,-1.96939 0.194818,-1.96939 0.108006,-1.12499 z"
+                  fill="rgba(255,255,255,0.06)" stroke="none" class="muscle-path"
+                  style="cursor:pointer;transition:fill 0.4s ease;" />
+                <path id="vastus_lateralis" data-muscle="vastus_lateralis"
+                  d="m 56.76759,119.86193 -1.861384,4.84777 -0.606165,1.47174 -0.865579,2.7218 -1.082106,3.29489 -0.649055,4.15478 -0.216524,2.68356 v 2.68356 l 0.08682,3.28972 0.0863,2.33732 0.173115,2.38074 0.259932,2.16421 0.216524,1.99057 0.346234,1.9911 1.038696,3.63595 0.519348,1.90427 0.77928,2.68356 0.95188,2.68356 1.038696,2.55385 0.692981,1.55856 0.951881,1.47123 0.822687,1.0821 0.616596,0.64934 0.962843,0.21627 0.768601,-0.52993 0.292251,-0.67109 0.172974,-1.00611 0.216524,-1.21181 0.173117,-0.99581 -0.194821,-1.40663 -0.19482,-1.40663 -0.389639,-2.38073 -0.47594,-2.0345 -0.606166,-2.0774 -0.670758,-2.35903 -0.670762,-2.35902 -0.800983,-3.37603 -0.800468,-3.37602 -0.454753,-2.74867 -0.454236,-2.74815 -0.281636,-2.92178 -0.28112,-2.92179 -0.19482,-2.35851 -0.194821,-2.35903 -0.0217,-2.46755 -0.0217,-2.46703 0.130226,-2.25051 0.129706,-2.25103 z m 42.296127,0 0.56224,3.76566 0.130225,2.25103 0.129707,2.25051 -0.0217,2.46754 -0.0217,2.46704 -0.194821,2.35903 -0.19482,2.35851 -0.28112,2.92179 -0.281636,2.92178 -0.454237,2.74815 -0.454234,2.74867 -0.800986,3.37602 -0.800984,3.37603 -0.670761,2.35902 -0.670758,2.35903 -0.606166,2.0774 -0.47594,2.0345 -0.389639,2.38073 -0.194821,1.40663 -0.19482,1.40663 0.173117,0.99581 0.216524,1.21181 0.30334,0.99529 0.389122,0.60616 0.454798,0.44337 0.724784,0.16246 1.168458,-0.81166 0.84433,-1.10374 0.703517,-1.50369 0.692464,-1.55856 1.038696,-2.55385 0.952394,-2.68356 0.77877,-2.68356 0.51934,-1.90427 1.03922,-3.63595 0.34623,-1.9911 0.21601,-1.99057 0.25993,-2.16421 0.17311,-2.38074 0.0868,-2.33732 0.0863,-3.28972 v -2.68356 l -0.21652,-2.68356 -0.64906,-4.15478 -1.0821,-3.29489 -0.86558,-2.7218 -0.60617,-1.47174 z"
+                  fill="rgba(255,255,255,0.06)" stroke="none" class="muscle-path"
+                  style="cursor:pointer;transition:fill 0.4s ease;" />
+                <path id="hip_adductors" data-muscle="hip_adductors"
+                  d="m 73.721595,122.15636 -0.333314,0.80667 -1.387512,2.54817 -1.247468,2.37815 -1.591636,3.43958 -1.349787,2.70836 0.673862,2.00143 0.616497,1.91461 0.919843,2.85616 0.731737,3.14503 0.484724,2.08411 0.730189,3.13676 0.499711,2.38435 0.908989,4.33565 0.559139,-3.92793 0.736907,-3.27008 0.639752,-3.10007 0.64544,-3.26957 0.387056,-4.11913 0.257866,-3.05769 v -11.42359 l -0.946195,-0.12713 -0.983919,-0.67954 z m 8.158157,0 -0.957564,0.77877 -0.990119,0.69246 -0.95188,0.13023 v 11.64321 l 0.259416,3.11609 0.389638,4.19871 0.649058,3.33261 0.643887,3.16002 0.741558,3.33261 0.562756,4.00389 0.914156,-4.41937 0.503328,-2.43034 0.734322,-3.1967 0.487825,-2.12494 0.736391,-3.20549 0.925007,-2.91041 0.620117,-1.95182 0.678511,-2.03967 -1.358056,-2.76107 -1.601451,-3.50573 -1.255221,-2.42363 -1.39578,-2.59726 z"
+                  fill="rgba(255,255,255,0.06)" stroke="none" class="muscle-path"
+                  style="cursor:pointer;transition:fill 0.4s ease;" />
+                <path id="hip_flexors" data-muscle="hip_flexors"
+                  d="M 59.23453 104.42567 L 58.911035 105.10883 L 58.248543 107.45236 L 57.848568 110.01964 L 57.881641 113.88917 L 58.704329 117.26519 L 58.942558 118.13077 L 59.656726 120.64122 L 60.781722 123.97383 L 62.015238 127.76119 L 62.924227 130.24993 L 64.461084 134.40523 L 66.148836 138.90677 L 67.793697 143.36489 L 68.356453 144.74982 L 69.914498 148.47259 L 70.65037 150.85281 L 71.083419 152.23825 L 71.797587 154.8784 L 72.078707 156.13362 L 72.403235 157.88649 L 72.836283 161.37103 L 73.388188 160.20211 L 73.377336 155.89539 L 71.959851 149.04568 L 70.001314 140.51907 L 68.150781 134.69772 L 67.877413 133.90604 L 69.161572 131.32893 L 69.957389 129.60914 L 72.978394 123.71545 L 73.883765 121.92899 L 72.514339 120.19783 L 70.751139 117.63313 L 69.193095 115.66322 L 66.06512 111.47588 L 63.71746 108.60836 L 60.649947 105.78372 L 59.23453 104.42567 Z M 96.509774 104.47993 L 94.91814 105.88759 L 91.889384 108.97629 L 89.616654 111.62729 L 86.435453 115.75004 L 84.985413 117.75199 L 83.18914 120.3818 L 81.879659 122.15637 L 84.064539 126.4512 L 85.212789 128.75752 L 86.331584 131.20698 L 87.826066 134.26622 L 87.452445 135.34678 L 85.602429 141.16813 L 83.643892 149.69526 L 82.226408 156.54497 L 82.215556 160.85168 L 82.766943 162.02008 L 83.199992 158.53606 L 83.52452 156.78268 L 83.806156 155.52746 L 84.520325 152.88731 L 84.952856 151.50238 L 85.688729 149.12165 L 87.246773 145.39939 L 87.80953 144.01447 L 89.45439 139.55582 L 91.14266 135.05481 L 92.679 130.8995 L 93.587988 128.41077 L 94.821505 124.6234 L 95.947017 121.29027 L 96.661186 118.77983 L 96.899414 117.91425 L 97.721586 114.53823 L 98.101408 110.72347 L 97.733988 108.27504 L 97.060645 105.88759 L 96.509774 104.47993 Z"
+                  fill="rgba(255,255,255,0.06)" stroke="none" class="muscle-path"
+                  style="cursor:pointer;transition:fill 0.4s ease;" />
+                <path id="wrist_flexors" data-muscle="wrist_flexors"
+                  d="m 38.120667,77.617482 -0.465606,0.984954 c 0,0 -1.633585,3.321883 -1.666047,3.365167 -0.03246,0.04328 -1.850533,3.809071 -1.850533,3.809071 l -0.995288,2.694408 -0.735872,3.181202 -0.433049,5.810498 c 0,0 -0.205798,6.362678 -0.249082,6.460068 -0.04328,0.0974 -0.05374,3.04064 -0.05374,3.04064 l -1.24437,5.11855 0.497645,0.4222 1.504301,0.31368 0.346232,-0.37879 0.898138,-1.76372 1.35237,-2.97604 2.257227,-4.61161 -0.321427,1.19373 -0.611833,2.76965 -0.796049,2.5786 -0.336714,1.47665 0.275437,0.0305 0.397907,-0.30592 0.811204,-0.45922 0.956247,-1.79788 1.086556,-2.06622 1.178705,-1.8666 1.316033,-1.89026 0.971735,-1.02494 1.41555,-1.5535 1.353989,-1.637305 1.34669,-1.691219 0.849426,-1.170604 0.53585,-1.178258 0.481658,-1.905259 0.30644,-1.622124 v -2.509409 l -0.244946,-2.785358 -0.008,-2.413096 -0.559445,0.700538 -2.366039,2.075791 -1.434209,1.432406 -0.925046,1.174205 -1.010275,1.65313 -0.326078,-2.246892 -0.241845,-1.904793 -0.114411,-0.419031 -0.470566,-1.723475 -0.357085,-0.768429 -1.03606,-2.252031 -0.593297,-1.718783 z m 79.694873,0.382405 -0.69246,1.644862 -0.77876,1.644343 -0.9524,2.164209 -0.47594,0.90899 -0.34675,1.688266 -0.12971,0.519351 -0.1297,1.860867 -0.30851,1.771468 -0.38292,-0.780831 -1.25471,-1.744596 -2.14251,-2.172994 -1.46244,-1.224214 -0.98598,-0.826307 -0.092,2.601908 -0.24443,2.784842 v 2.509925 l 0.30593,1.622124 0.64285,2.020032 0.61185,1.101741 0.91829,1.101741 1.34669,1.560629 1.43815,1.653127 1.34669,1.56063 0.94878,1.04076 1.22422,1.80558 1.25522,1.98954 1.07125,2.08101 0.90499,1.71608 0.59466,0.60988 0.46283,0.3389 0.14559,-0.34481 -0.0575,-1.09584 -0.73484,-2.69337 -0.88728,-2.75435 -0.32143,-1.19373 2.25722,4.61212 1.35238,2.97553 0.89813,1.76372 0.34675,0.37878 1.50379,-0.31367 0.49764,-0.4222 -1.24437,-5.11803 c 0,0 -0.0104,-2.94326 -0.0537,-3.04064 -0.0433,-0.0974 -0.24908,-6.460073 -0.24908,-6.460073 l -0.43305,-5.811014 -0.73536,-3.181202 -0.9958,-2.694408 c 0,0 -1.81807,-3.765788 -1.85053,-3.809071 -0.0325,-0.04328 -1.66605,-3.36517 -1.66605,-3.36517 z"
+                  fill="rgba(255,255,255,0.06)" stroke="none" class="muscle-path"
+                  style="cursor:pointer;transition:fill 0.4s ease;" />
+                <path id="rectus_abdominis" data-muscle="rectus_abdominis"
+                  d="m 75.336482,66.6812 -2.907316,0.811318 -3.076297,0.458888 -2.096513,0.06149 -1.009756,0.382405 -0.688848,1.101741 -0.04548,5.677691 0.397394,2.081009 1.040762,0.55087 4.239019,-1.147733 2.127002,-0.657842 2.310968,-0.198953 0.94878,-0.39791 0.497645,-0.703831 v -6.28954 L 76.729164,67.251189 75.79537,66.712204 Z m 5.074626,0 -0.458885,0.031 -0.933794,0.538985 -0.344681,1.159619 v 6.28954 l 0.497644,0.703831 0.948778,0.39791 2.310971,0.198953 2.127001,0.657842 4.239019,1.147733 1.040763,-0.55087 0.397391,-2.081009 -0.04547,-5.677691 -0.688848,-1.101741 -1.009756,-0.382405 -2.096513,-0.06149 -3.0763,-0.458888 z m -4.79919,9.717752 -7.972639,1.97404 -1.071253,0.336412 -0.504878,0.826307 -0.0155,2.632398 0.367419,3.41271 0.535368,1.407668 0.994773,0.642852 7.743195,-0.443899 0.887801,-0.459404 0.581361,-0.887283 0.03049,-7.850685 -0.520382,-1.116726 z m 4.523756,0 -1.055751,0.47439 -0.52038,1.116726 0.03049,7.850685 0.581361,0.887283 0.887799,0.459404 7.743198,0.443899 0.994772,-0.642852 0.535366,-1.407668 0.367419,-3.41271 -0.0155,-2.632398 -0.504878,-0.826307 -1.071253,-0.336412 z m -4.309298,11.476817 -3.259751,0.367419 -3.244244,0.07648 H 67.79224 l -0.918289,1.040762 -0.01551,3.412712 0.428914,3.060277 0.565856,1.561145 1.316199,0.749826 3.703132,0.244946 2.754871,0.106971 1.270209,-0.612367 0.29042,-0.933276 V 89.253463 L 76.62219,88.197199 Z m 4.09484,0 -0.795816,0.32143 -0.565857,1.056264 v 7.697205 l 0.29042,0.933276 1.270207,0.612367 2.75487,-0.106971 3.703135,-0.244946 1.316199,-0.749826 0.565856,-1.561145 0.428914,-3.060277 -0.01551,-3.412712 -0.918292,-1.040762 h -1.530138 l -3.244247,-0.07648 z m -10.843783,10.880474 -0.611849,0.122473 -0.627351,0.795816 -0.01551,2.433448 0.428398,2.67787 0.765328,3.8256 0.918289,3.41272 1.438156,3.3817 2.066023,3.33623 1.386478,1.48415 1.352891,0.84181 0.918289,0.0155 0.366903,-0.85731 -0.09147,-18.56217 -0.459401,-1.775087 -1.009759,-0.703834 -4.728911,-0.04599 z m 17.592725,0 -2.096514,0.382921 -4.728908,0.04599 -1.009759,0.703834 -0.459404,1.775082 -0.09147,18.56218 0.366903,0.85731 0.918289,-0.0155 1.352889,-0.84181 1.38648,-1.48415 2.066023,-3.33623 1.438156,-3.38171 0.918289,-3.41271 0.765329,-3.8256 0.428397,-2.67788 -0.01551,-2.433442 -0.627353,-0.795817 z"
+                  fill="rgba(255,255,255,0.06)" stroke="none" class="muscle-path"
+                  style="cursor:pointer;transition:fill 0.4s ease;" />
+                <path id="anterior_deltoid" data-muscle="anterior_deltoid"
+                  d="m 52.608155,38.706164 -0.968934,0.49661 -1.821076,0.584978 -0.393258,0.649571 -1.273308,1.024228 -1.097608,1.009756 -1.233516,1.60197 -1.5968,2.769857 -0.822691,2.726965 -0.441163,2.565172 -0.195996,3.624114 0.22841,2.293917 0.46147,2.316138 0.62787,-0.930693 1.384927,-1.688269 1.558044,-1.016992 2.359091,-2.380903 1.213765,-1.516338 1.550871,-2.075519 1.409973,-2.07791 1.558044,-2.380475 0.779023,-1.146958 1.605529,-1.520335 1.578157,-2.602834 -0.01074,-0.897998 -1.146924,-0.519536 -1.11444,-0.443682 -1.439408,-0.345964 -1.460674,-0.07598 z m 50.480635,0 -1.29862,0.04289 -1.38493,0.259932 -1.515156,0.43253 -1.038696,0.367938 -0.865581,0.584459 -0.151411,0.670761 1.63535,2.581005 1.479187,1.401181 0.779287,1.147217 1.55804,2.380215 1.41955,2.090828 1.5751,2.108398 1.01079,1.341004 2.38073,2.618962 1.55805,1.016992 1.38492,1.688269 0.62787,0.930693 0.46199,-2.316138 0.22789,-2.293917 0.009,-3.614766 -0.46561,-2.57452 -1.00356,-2.726965 -1.5968,-2.769857 -1.23351,-1.60197 -1.09761,-1.009756 -1.27331,-1.024228 -0.39326,-0.649571 -1.82107,-0.584978 z"
+                  fill="rgba(255,255,255,0.06)" stroke="none" class="muscle-path"
+                  style="cursor:pointer;transition:fill 0.4s ease;" />
+                <path id="brachialis" data-muscle="brachialis"
+                  d="m 115.29477,69.263986 0.12092,1.571482 0.10594,1.375108 0.0574,1.558044 -0.0796,2.455664 -0.0315,0.960665 -0.18965,1.090891 -0.14108,0.80977 -0.18861,1.08572 -0.38965,0.952397 -0.35139,0.858346 -0.77412,0.526584 -0.51934,0.0217 -0.51935,0.0217 -0.60617,0.259416 -0.38757,0.166396 -0.41496,-0.01654 -0.73381,-0.409276 -1.22783,-0.810287 -1.05885,-1.036113 -1.26762,-1.588532 -0.83871,-1.283126 -0.93638,-2.075326 -1.26659,-2.565736 0.19017,1.481564 0.58446,2.120802 1.1684,2.921786 1.51516,2.704742 1.15135,1.444874 1.22421,1.02526 1.37667,1.26659 1.49706,1.518253 0.62735,0.872297 1.01028,1.65313 0.15399,-0.885735 0.21911,-1.81591 0.19482,-1.450041 0.58446,-2.142503 0.71417,-1.536856 1.0449,-2.282031 0.74,-1.703255 -0.10748,-2.30477 -0.30283,-2.337326 -0.76998,-1.904275 z m -74.635757,0.09354 -1.178224,2.575552 -0.769461,1.904278 -0.302823,2.337324 0.05839,2.265238 0.939528,2.541214 0.678979,1.483604 0.714168,1.536856 0.584978,2.142506 0.194302,1.450041 0.219109,1.815909 0.154512,0.885735 1.010274,-1.65313 0.925047,-1.174205 1.199372,-1.216347 1.417855,-1.253956 1.183021,-1.037894 1.118888,-1.401072 1.547614,-2.748545 1.168405,-2.921785 0.58446,-2.1208 0.190169,-1.481563 -1.26659,2.565733 -0.936376,2.075325 -0.838708,1.283126 -1.267624,1.588535 -1.059365,1.036111 -1.227318,0.810286 -0.733803,0.409279 -0.31533,-0.09161 -0.38902,-0.113024 -0.70435,-0.20464 -0.657323,-0.06847 -0.320503,-0.03338 -0.834985,-0.468119 -0.36222,-0.879988 -0.37882,-0.930754 -0.188618,-1.085723 -0.141076,-0.809768 -0.189654,-1.09089 -0.03152,-0.960149 -0.0801,-2.45618 0.05788,-1.558044 0.105937,-1.375111 z"
+                  fill="rgba(255,255,255,0.06)" stroke="none" class="muscle-path"
+                  style="cursor:pointer;transition:fill 0.4s ease;" />
+                <path id="external_obliques" data-muscle="external_obliques"
+                  d="m 61.623109,66.6812 0.0217,0.678511 0.04341,0.908471 -0.562756,0.627869 -1.190503,0.129762 -1.168527,0.02164 0.415166,0.849022 0.277299,1.402006 v 1.124995 l -0.649057,0.649573 -0.974101,-0.0217 0.145912,0.508413 0.254606,0.771371 0.194588,0.786093 0.257305,0.926021 -0.215056,0.750075 -1.199595,0.391623 -0.0217,4.414718 0.670761,3.008085 -0.08682,4.263306 -0.367419,1.75338 -0.49816,3.258201 v 2.757969 l 0.541052,2.618446 1.190625,2.12132 2.445329,2.57503 2.661851,2.42414 1.707907,1.34152 0.586012,0.12971 0.735872,-0.45423 0.04341,-1.62316 -0.259932,-2.07739 -0.194305,-2.16421 -0.649573,-1.796273 v -3.895371 l -0.129707,-2.510441 -0.131775,-0.995804 -0.344165,-0.843875 -0.216524,-7.336504 -0.108519,-3.441134 -0.237713,-1.861384 -0.367937,-1.514636 -0.08682,-3.202905 -0.259416,-0.324528 -0.04341,-0.77928 0.0217,-2.770375 -0.216524,-0.714169 -0.649058,-1.53634 z m 32.506026,0 -1.38493,1.327566 -0.649571,1.53634 -0.216008,0.714168 0.0217,2.770376 -0.04341,0.77928 -0.259932,0.324527 -0.0863,3.202905 -0.367934,1.514637 -0.238229,1.861383 -0.108002,3.441134 -0.216525,7.336504 -0.344683,0.843875 -0.131257,0.995805 -0.130226,2.51044 v 3.895371 l -0.649054,1.796269 -0.194821,2.16421 -0.259932,2.07739 0.04341,1.62316 0.735872,0.45424 0.58601,-0.12971 1.707906,-1.34152 2.661854,-2.42414 2.445846,-2.57504 1.190109,-2.121315 0.541051,-2.618447 v -2.757969 l -0.497644,-3.258201 -0.367937,-1.75338 -0.08682,-4.263305 0.594762,-3.038692 -0.139981,-4.41125 -0.795488,-0.243692 -0.286639,-0.962686 0.129958,-1.039167 0.243435,-0.892551 0.194884,-0.459962 -0.02392,-0.504624 -0.804294,0.01791 -0.649054,-0.649573 v -1.124995 l 0.157117,-1.087686 0.535345,-1.163341 -1.168506,-0.02164 -1.190522,-0.129755 -0.562755,-0.627869 0.04341,-0.908471 z"
+                  fill="rgba(255,255,255,0.06)" stroke="none" class="muscle-path"
+                  style="cursor:pointer;transition:fill 0.4s ease;" />
+                <path id="tibialis_anterior" data-muscle="tibialis_anterior"
+                  d="m 59.915195,184.90591 -0.865582,2.85667 -0.562755,2.72697 -0.562756,3.1166 -0.259932,2.59674 -0.04289,3.33313 0.04289,3.1595 0.433046,2.68355 0.606166,3.02979 0.692465,2.98639 0.649055,2.1642 0.865581,2.25103 1.817976,4.93406 0.995805,2.64067 1.254704,2.94297 0.692981,1.55805 0.735872,1.45004 -0.433049,-4.95577 -0.259932,-3.41943 -0.302823,-5.45393 -0.519348,-5.06378 -0.735873,-6.53603 -0.562755,-3.93878 -0.475941,-3.93877 -0.606165,-3.0732 -0.605647,-2.72645 -1.125514,-3.50625 z m 36.013305,0.092 -0.865579,1.81798 -1.125514,3.50573 -0.606163,2.72696 -0.60565,3.0732 -0.476456,3.93878 -0.56224,3.93877 -0.735872,6.53552 -0.519348,5.06429 -0.30334,5.45393 -0.259416,3.41943 -0.433048,4.95577 0.735872,-1.45004 0.692465,-1.55804 1.25522,-2.94349 0.995804,-2.64015 1.81746,-4.93458 0.866098,-2.25051 0.649055,-2.16421 0.692465,-2.98638 0.606165,-3.02979 0.432531,-2.68356 0.04341,-3.16001 -0.04341,-3.33262 -0.259416,-2.59725 -0.562756,-3.11609 -0.562756,-2.72697 z"
+                  fill="rgba(255,255,255,0.06)" stroke="none" class="muscle-path"
+                  style="cursor:pointer;transition:fill 0.4s ease;" />
+                <path id="serratus_anterior" data-muscle="serratus_anterior"
+                  d="m 53.909876,58.875878 -0.14986,1.034045 0.04702,1.390097 -0.01704,1.132229 -0.127125,1.202512 -0.164848,1.556494 -0.179835,1.537372 -0.141076,1.149802 -0.12764,0.834057 0.0021,1.130165 0.198956,1.193723 0.497641,1.851567 0.657842,1.729095 0.772562,1.874819 2.168345,4.471561 -0.0088,-3.643188 0.32453,-0.189651 0.389639,-0.05426 0.420647,-0.283186 0.21549,-0.749827 -0.306959,-1.272273 -0.399976,-1.211297 -0.145727,-0.508494 0.974101,0.02169 0.649057,-0.649573 v -1.124995 l -0.164849,-1.171506 -0.527616,-1.079519 0.6165,-0.03256 0.551905,0.01085 0.98392,-0.07131 0.487825,-0.372071 0.281636,-0.314192 -0.0217,-0.454234 -0.0217,-0.454237 -0.01085,-0.338998 -0.01085,-0.339513 -0.300241,-0.537953 -1.059884,-0.806667 -0.694015,-0.336415 -0.973582,-0.865579 -0.9741,-0.865582 -1.146702,-1.233517 -0.659908,-0.709517 -0.756541,-0.889868 -0.50178,-0.681611 z m 47.932474,0 -0.64647,0.878499 -0.50178,0.681611 -0.756541,0.889868 -0.659392,0.709518 -1.147217,1.233516 -0.973585,0.865582 -0.974101,0.865579 -0.694012,0.336415 -1.059884,0.806667 -0.300241,0.537953 -0.01085,0.339514 -0.01085,0.338997 -0.0217,0.454237 -0.0217,0.454234 0.281636,0.314192 0.487825,0.372071 0.98392,0.07132 0.551905,-0.01085 0.6165,0.03256 -0.535368,1.163235 -0.157097,1.087789 v 1.124995 l 0.649055,0.649574 0.9741,-0.0217 -0.145727,0.508495 -0.399976,1.211296 -0.168465,1.180291 0.221176,0.743106 0.276468,0.381889 0.389641,0.05426 0.324528,0.18965 -0.0088,3.643188 2.168342,-4.471561 0.77256,-1.874819 0.65784,-1.729094 0.49765,-1.851568 0.19895,-1.193723 0.002,-1.130165 -0.12764,-0.834057 -0.14108,-1.149802 -0.17983,-1.537372 -0.16485,-1.556494 -0.12713,-1.202512 -0.017,-1.132229 0.047,-1.390097 z"
+                  fill="rgba(255,255,255,0.06)" stroke="none" class="muscle-path"
+                  style="cursor:pointer;transition:fill 0.4s ease;" />
+              </svg>
+            </div>
+          </div>
+          <div class="view-wrap">
+            <div class="view-label">Posterior</div>
+            <div class="svg-card" id="cardPosterior">
+              <svg viewBox="0 0 210 297" xmlns="http://www.w3.org/2000/svg" id="svgPosterior">
+                <path id="gluteus_maximus" data-muscle="gluteus_maximus"
+                  d="m 96.934726,119.8675 -1.2392,0.15244 -1.73478,0.76275 -1.27021,1.00717 -1.66966,2.15956 -0.9338,1.69705 -0.9359,2.74503 -1.02167,3.8281 -0.44228,3.30043 -0.28629,3.69254 0.23926,5.40225 1.17719,4.11965 1.70429,1.89187 1.42524,-0.0305 6.165,-1.52548 3.261824,-1.76992 2.96571,-2.22777 2.01383,-3.11248 0.68161,-1.526 0.29404,-4.33255 -0.093,-0.45635 -1.19586,-4.06017 -1.40767,-3.78375 -1.98954,-3.72277 -1.58336,-2.31562 -1.522404,-1.56011 -1.51825,-0.30489 z m 10.438124,16.23415 0.46251,4.33255 0.67334,1.526 1.98954,3.11248 2.81533,2.22777 3.33623,1.76992 6.09059,1.52548 1.40767,0.0305 1.68361,-1.89187 1.16324,-4.11965 0.39739,-5.03483 -0.30592,-4.11965 -0.55087,-3.78374 -1.46916,-5.12631 -0.82631,-1.83089 -1.04076,-1.5565 -1.19321,-1.37304 -1.25522,-1.00717 -1.71359,-0.76275 -1.22422,-0.15244 -1.07125,0.0305 -1.49965,0.30489 -1.56115,1.55649 -1.62212,2.31924 -1.98954,3.72277 -1.40767,3.78375 -1.17086,3.97677 z"
+                  fill="rgba(255,255,255,0.06)" stroke="none" class="muscle-path"
+                  style="cursor:pointer;transition:fill 0.4s ease;" />
+                <path id="spinal_erectors" data-muscle="spinal_erectors"
+                  d="m 107.40489,82.850637 -2.41949,4.819343 -0.91777,0.994773 -0.262,1.46916 -1.59164,5.753653 -1.04024,4.560444 -0.4284,4.07055 -0.19896,3.27474 -0.24494,3.18327 -0.0155,2.53989 0.0305,2.44895 0.45941,2.64738 0.24494,3.14658 0.8108,1.15962 0.81133,1.15962 0.99477,1.86139 0.99477,1.86138 0.70383,1.89187 0.70383,1.89188 0.50488,1.75493 0.78393,2.61534 v 0.14625 l 0.0222,-0.0734 0.0217,0.0734 v -0.14625 l 0.78393,-2.61534 0.50488,-1.75493 0.70383,-1.89188 0.70383,-1.89187 0.99478,-1.86138 0.99476,-1.86139 0.81081,-1.15962 0.81132,-1.15962 0.24494,-3.14658 0.45889,-2.64738 0.031,-2.44895 -0.0155,-2.53989 -0.24494,-3.18327 -0.19896,-3.27474 -0.4284,-4.07055 -1.04076,-4.560444 -1.59112,-5.753653 -0.15348,-1.46916 -0.91777,-0.994773 -2.45205,-4.883938 -0.0217,26.657798 z"
+                  fill="rgba(255,255,255,0.06)" stroke="none" class="muscle-path"
+                  style="cursor:pointer;transition:fill 0.4s ease;" />
+                <path id="hamstrings_biceps_femoris" data-muscle="hamstrings_biceps_femoris"
+                  d="m 87.689806,143.91047 -1.50119,3.06907 -0.75758,2.26497 -0.37466,1.24696 -0.87229,4.87412 -0.19896,2.70112 -0.0615,4.62143 0.27543,2.1115 0.72709,4.86637 0.65009,2.76985 1.34669,5.42499 0.58187,2.8696 0.30593,2.10375 0.54053,0.92139 0.18966,-1.54203 -0.007,0.96222 -0.30593,1.34669 -0.061,2.27996 0.015,3.21376 2.80035,-3.76463 1.42316,-2.40244 1.11725,-2.46393 1.10174,-3.24425 0.97927,-6.09058 0.58187,-5.18728 0.70384,-6.64197 0.56637,-5.20279 0.58136,-5.94795 -1.8495,0.46302 -1.19579,0.29972 -1.89343,0.47439 -1.15186,0.28835 -0.70384,0.015 -0.70383,0.0155 -0.96428,4.71341 -0.39016,2.41691 0.21756,-1.52653 0.26562,-1.55804 0.50744,-2.2674 0.34625,-1.77835 -1.00069,-1.11083 -0.7036,-0.78104 -0.42629,-1.49184 -0.37196,-1.3017 -0.27067,-0.9472 -0.0313,-0.69258 z m 39.333524,0.34158 -0.0284,0.36277 -0.19999,0.709 -0.25786,0.91261 -0.3638,1.28778 -0.34159,1.21026 -0.84181,0.94619 -0.8418,0.94568 -0.70384,-0.0155 -0.70383,-0.015 -1.15187,-0.28835 -1.89342,-0.47439 -1.1958,-0.29972 -1.8495,-0.46302 0.58136,5.94795 0.56638,5.20279 0.70383,6.64197 0.58188,5.18728 0.97927,6.09058 1.10174,3.24425 1.11724,2.46393 1.42317,2.40244 2.80035,3.76463 0.0155,-3.21376 -0.0615,-2.27996 -0.0966,-0.4253 -0.20929,-0.92139 -0.006,-0.82631 0.21498,1.7477 0.54053,-0.92139 0.30593,-2.10427 0.58135,-2.86908 1.34669,-5.42499 0.65061,-2.76985 0.72709,-4.86637 0.27543,-2.11202 -0.0615,-4.62142 -0.19896,-2.70061 -0.8723,-4.87412 -0.37465,-1.24747 -0.75758,-2.26446 z m -1.48828,13.88856 0.18655,2.5182 -0.0279,-0.34572 z m -36.449454,0.91778 -0.092,1.2547 -0.18241,2.27118 5.2e-4,-0.0191 0.18035,-2.24741 z"
+                  fill="rgba(255,255,255,0.06)" stroke="none" class="muscle-path"
+                  style="cursor:pointer;transition:fill 0.4s ease;" />
+                <path id="hamstrings_medial" data-muscle="hamstrings_medial"
+                  d="m 109.03115,142.77721 -0.38706,4.46329 0.0326,4.12792 0.46509,4.99917 0.70331,4.39353 0.92553,4.05764 0.092,1.73684 0.0755,6.18412 0.41703,3.19722 0.51366,2.81895 0.34623,2.20193 0.36277,6.01669 0.68161,3.49488 1.76372,5.29167 1.44332,-5.194 1.37718,-2.83083 0.8108,-2.24948 0.78084,-3.25975 0.62735,-4.08606 -0.3576,-2.22467 -0.68007,-4.38475 -0.61391,-5.52162 -0.44184,-4.17184 -0.45475,-4.21835 -0.28319,-2.60139 -0.29093,-2.97398 -0.29043,-2.97397 -1.3627,-0.72296 -1.97353,-1.04696 -1.40766,-1.11363 -0.73742,-0.58394 -0.67025,-0.5302 -0.37155,-0.58136 z m -3.38274,0.12402 -1.09554,1.71359 -0.37156,0.58136 -0.66455,0.52555 0.002,-0.11885 -0.73742,0.58342 -1.40767,1.11415 -1.973524,1.04696 -1.36271,0.72296 -0.29042,2.97397 -0.29094,2.97398 -0.28319,2.60139 -0.45475,4.21835 -0.44183,4.17184 -0.61392,5.52162 -0.68006,4.38475 -0.3576,2.22467 0.62735,4.08606 0.78083,3.25975 0.81081,2.24948 1.37252,2.82101 -0.003,0.13333 1.44332,5.19399 1.763724,-5.29115 0.68161,-3.49539 0.36277,-6.01617 0.34623,-2.20245 0.51366,-2.81843 0.41651,-3.19774 0.076,-6.18412 0.092,-1.73685 0.92501,-4.05763 0.70332,-4.39353 0.4656,-4.99918 0.0326,-4.12791 z m -2.20038,6.47092 -0.001,0.0615 -0.32143,2.98432 -0.53588,3.68298 -0.0289,0.12712 0.57257,-3.93361 z m -1.37873,9.02064 -0.70177,3.08974 -1.30638,6.12727 -0.592734,3.49281 -0.22944,2.02468 -0.50436,4.91547 -0.31833,4.43952 -0.0801,3.10111 0.0687,-2.95848 0.4284,-5.96812 0.64286,-5.67769 0.703834,-4.14703 0.96376,-4.48345 z m 11.24376,2.9714 0.23047,0.98443 0.96377,4.48345 0.11059,0.65009 z m 2.1301,11.66285 0.41083,3.62975 0.0904,1.26246 z m 0.82011,9.33174 0.0191,0.26613 0.10903,4.71547 z"
+                  fill="rgba(255,255,255,0.06)" stroke="none" class="muscle-path"
+                  style="cursor:pointer;transition:fill 0.4s ease;" />
+                <path id="gastrocnemius" data-muscle="gastrocnemius"
+                  d="m 122.2815,183.84912 -0.4284,0.30593 -0.61236,1.22421 -0.58136,2.1885 -0.16847,1.89756 -0.19895,1.10174 -0.19895,-0.50488 -0.71934,-1.7601 -0.68833,-1.43815 -0.43615,-0.25218 -0.40566,1.12448 -0.68885,1.41541 -0.68833,1.41542 -0.23564,0.84801 -0.48628,1.74925 -0.7214,2.59674 -0.46974,2.44222 -1.14773,5.84564 -0.47439,1.95906 -0.48989,3.25923 0.031,2.9993 0.27544,2.78536 0.8723,2.60139 1.36167,1.71411 1.05626,0.15296 1.16273,-0.16847 1.33118,-1.11672 0.85731,-1.34669 0.88729,-2.23449 0.36742,1.40818 0.65784,1.74408 0.93379,1.42317 1.14773,0.76533 1.2852,0.0615 1.01027,-0.39791 1.48415,-1.7296 0.74982,-1.66812 0.8878,-2.61638 0.55087,-3.13727 v -3.97857 l -0.3824,-4.04007 -0.67334,-3.36671 -0.96429,-3.39721 -0.8263,-3.42822 v -2.27996 l -0.62787,-0.84439 -1.09451,-1.47123 -1.07797,-1.44901 z m -29.938804,0.10654 -1.36006,2.2959 -1.141,1.5339 -1.08792,1.46254 -0.57143,0.76819 -0.008,2.40347 -0.82631,3.42821 -0.96428,3.39721 -0.67334,3.36672 -0.38241,4.04006 v 3.97857 l 0.55087,3.13728 0.8878,2.61638 0.74983,1.66811 1.48414,1.72961 0.5054,0.19896 1.14773,0.16846 1.21647,-0.41341 1.04076,-1.09451 0.79582,-1.58336 0.69608,-2.28048 0.40846,1.02805 0.90774,1.87978 1.09399,1.23197 0.66559,0.5581 1.16272,0.16847 c 0.82552,0.12658 1.622434,-0.84357 2.417944,-1.86707 l 0.8723,-2.60139 0.27543,-2.78536 0.031,-2.99931 -0.48989,-3.25923 -0.47439,-1.95905 -1.14774,-5.84564 -0.469744,-2.44223 -0.7214,-2.59725 -0.48627,-1.74925 -0.23565,-0.84749 -0.68316,-1.54384 -0.68626,-1.4105 -0.4591,-1.27372 -0.47162,0.49246 -0.72079,1.36782 -0.55703,1.71141 -0.24764,0.65637 -0.0583,-1.12339 -0.2388,-1.96789 -0.55431,-2.17768 -0.7368,-1.38652 z"
+                  fill="rgba(255,255,255,0.06)" stroke="none" class="muscle-path"
+                  style="cursor:pointer;transition:fill 0.4s ease;" />
+                <path id="trapezius_upper" data-muscle="trapezius_upper"
+                  d="m 105.99981,44.677259 -0.84956,0.219106 -0.91467,0.809771 -0.71882,1.050581 -1.17616,3.064412 -1.45986,2.648418 -0.914674,1.225764 -1.80764,1.773018 -5.8813,3.480409 -4.92269,2.560566 0.10852,0.722437 0.87126,0.788066 1.26349,0.656807 8.49509,-2.626711 3.027724,-1.444874 1.72083,-1.116211 1.3503,-1.291394 1.13275,-1.597835 0.87126,-2.232422 0.6103,-1.685687 0.45734,-2.429308 0.21756,-1.532205 v 0.179835 l 0.21652,1.514633 0.45423,2.402438 0.60617,1.666565 0.86558,2.207102 1.12551,1.579747 1.34152,1.276925 1.70998,1.103809 3.00808,1.428335 8.44031,2.597258 1.25522,-0.649573 0.86558,-0.778764 0.10853,-0.714168 -4.89118,-2.532145 -5.84357,-3.441134 -1.79576,-1.752864 -0.90899,-1.211813 -1.45004,-2.61896 -1.16892,-3.029788 -0.71416,-1.038699 -0.90899,-0.800984 -0.84388,-0.216005 -0.71417,0.108003 -0.75757,0.346231 v -0.209288 l -0.76223,-0.349851 z"
+                  fill="rgba(255,255,255,0.06)" stroke="none" class="muscle-path"
+                  style="cursor:pointer;transition:fill 0.4s ease;" />
+                <path id="trapezius_lower" data-muscle="trapezius_lower"
+                  d="m 117.49161,67.148755 -1.11724,0.902787 -1.49965,1.132229 -0.91829,0.765328 -1.56063,1.101741 -1.43867,0.918292 -1.59164,0.856795 -1.96422,0.856795 -1.52497,-0.64234 -1.13223,-0.642853 -1.22421,-0.642855 -1.10174,-0.734322 -2.173,-1.622123 -0.734844,-0.611849 -1.00975,-0.826823 -1.15394,-0.818039 -1.12189,-0.686263 -1.14981,-0.679545 2.24379,1.373045 -0.48214,0.642853 -0.14521,1.851567 0.32918,2.081008 0.97152,4.407485 1.11724,3.412194 1.641254,3.588411 1.65519,3.213759 1.30948,2.185911 0.35244,0.13281 0.45888,-0.497128 0.45889,-0.497645 0.60875,-1.212328 1.02681,-2.045354 0.51263,-1.020609 0.2713,-0.541052 0.27182,0.541052 0.51263,1.020609 1.02681,2.045354 0.60875,1.212328 0.45889,0.497645 0.45888,0.497128 0.35243,-0.13281 1.30949,-2.185911 1.65519,-3.213759 1.64125,-3.588411 1.11724,-3.412194 0.97152,-4.407485 0.32918,-2.081008 -0.14522,-1.851567 z"
+                  fill="rgba(255,255,255,0.06)" stroke="none" class="muscle-path"
+                  style="cursor:pointer;transition:fill 0.4s ease;" />
+                <path id="rhomboids_trapezius_mid" data-muscle="rhomboids_trapezius_mid"
+                  d="m 107.48086,47.899802 -0.21756,1.35237 -0.22893,1.214913 -0.37465,1.617472 -0.46406,1.28261 -0.31264,0.800984 -0.34727,0.889868 -0.5736,1.05265 -0.7705,1.086755 -0.67489,0.645956 -0.79685,0.703832 -0.85473,0.551904 -0.85525,0.551905 -1.503784,0.714169 -1.5043,0.714166 -1.58182,0.486794 -1.53582,0.472321 -1.10226,0.339516 -1.72961,0.532267 -1.08107,0.332796 -1.40974,0.433564 0.24754,0.3452 0.72812,0.68988 0.002,0.0016 1.24179,0.515731 0.01,0.0021 1.52911,0.288872 1.75493,0.255796 1.1498,0.679546 1.1219,0.686263 1.15393,0.818038 1.00976,0.826823 0.734844,0.611849 2.17299,1.622124 1.10174,0.734321 1.22422,0.642856 1.13223,0.642853 1.52497,0.642339 1.96422,-0.856795 1.59164,-0.856795 1.43867,-0.918291 1.56063,-1.101741 0.91829,-0.765329 1.49965,-1.132229 1.11724,-0.902787 2.24379,-1.373045 0.51677,-0.05943 1.25522,-0.187584 0.76016,-0.131776 0.76171,-0.167947 1.24178,-0.515731 0.48525,-0.34985 0.49247,-0.686779 -1.40973,-0.433565 -1.08107,-0.332796 -1.72961,-0.532267 -1.10226,-0.339516 -1.53583,-0.472321 -1.58181,-0.486794 -1.5043,-0.714166 -1.50379,-0.714168 -0.85524,-0.551905 -0.85473,-0.551905 -0.91984,-0.875398 -0.68833,-0.775663 -0.59428,-0.834059 -0.41961,-0.766877 -0.42271,-1.077454 -0.59118,-1.567347 -0.3576,-1.123961 -0.24598,-1.299146 -0.21808,-1.264523 z"
+                  fill="rgba(255,255,255,0.06)" stroke="none" class="muscle-path"
+                  style="cursor:pointer;transition:fill 0.4s ease;" />
+                <path id="posterior_deltoids" data-muscle="posterior_deltoids"
+                  d="m 86.466116,62.780029 -3.02979,0.07648 -1.7601,0.321427 -2.46342,1.040765 -2.21898,1.591632 -1.82108,2.157492 -1.254704,2.34146 -0.903304,2.708362 -0.351917,2.75487 0.137978,2.66237 0.55087,2.509922 1.913057,-2.218986 2.05053,-1.576131 1.89755,-1.117243 c 0.47078,-0.182419 1.11058,-0.780195 1.9075,-1.395875 l 2.46898,-2.337747 2.52491,-2.72438 2.23007,-2.29262 1.3816,-1.303544 1.32446,-0.923975 -0.99632,-0.690915 -0.46457,-0.694012 -0.62735,-0.32453 -0.62787,-0.325044 z m 41.905974,0.0072 -1.86811,0.239779 -0.62786,0.325046 -0.62736,0.324527 -0.24649,0.343649 -1.2144,1.041278 1.32447,0.923975 1.43867,1.331704 2.17299,2.26446 2.52491,2.72438 2.89233,2.738853 1.48415,0.994769 1.89756,1.117246 2.05052,1.576131 1.91306,2.218986 0.55087,-2.509925 0.13798,-2.66237 -0.35192,-2.75487 -0.9033,-2.708362 -1.2547,-2.34146 -1.82108,-2.157489 -2.21899,-1.591635 -2.46341,-1.040763 -1.76011,-0.321429 z"
+                  fill="rgba(255,255,255,0.06)" stroke="none" class="muscle-path"
+                  style="cursor:pointer;transition:fill 0.4s ease;" />
+                <path id="gluteus_medius" data-muscle="gluteus_medius"
+                  d="m 93.514776,115.86516 -1.37717,0.16846 -1.92805,1.21182 -1.14774,1.33376 -1.2857,3.21996 -0.8413,3.0055 -1.25522,5.78105 -0.59686,4.12481 -0.4284,5.70404 -0.65784,3.5879 -0.48989,3.43493 -0.48938,4.44676 -0.16846,4.64622 0.24494,4.78421 0.39791,2.95899 0.83251,1.61799 -0.23616,-1.71773 -0.13023,-1.6154 0.0233,-1.75803 0.031,-2.31511 0.0726,-1.76914 0.0995,-1.35056 0.36396,-2.03371 0.44524,-2.48788 0.53417,-1.88774 0.55209,-1.65064 0.76306,-1.6631 0.84721,-1.73205 -0.10335,-1.26503 -0.15316,-2.70215 0.0675,-2.01914 0.12319,-1.58888 0.20138,-1.84634 0.3041,-2.26933 0.64457,-2.41516 0.84505,-2.78546 0.46796,-1.37251 0.93379,-1.69705 1.46916,-1.87431 1.24437,-1.08572 1.40095,-0.71623 1.17977,-0.3297 1.68362,-0.0455 0.74982,0.15245 0.74983,0.15296 0.780314,0.77979 0.78084,0.7798 -1.178744,-1.74253 -1.3162,-1.64072 -1.65262,-1.41077 -1.40766,-0.70487 -0.99477,-0.35295 z m 27.710464,0.008 -0.99426,0.046 -0.99477,0.35191 -1.40818,0.70384 -1.65261,1.40766 -1.3162,1.63763 -1.17823,1.73891 0.78083,-0.77825 0.78032,-0.77824 0.74982,-0.15245 0.74983,-0.15244 1.68362,0.046 1.17977,0.32866 1.40043,0.71468 1.24437,1.08366 1.46968,1.87017 0.93379,1.69395 0.82424,2.35024 0.44338,1.54771 0.61444,2.14354 0.40617,2.79105 0.22273,2.04225 0.14521,1.95957 0.0589,1.4087 -0.21446,2.72128 -0.13074,1.65261 0.75086,1.53479 0.75086,1.53428 0.55707,1.66604 0.57516,1.84589 0.43615,2.43706 0.34933,1.95078 0.15503,1.40922 0.13074,1.77767 0.031,2.31097 0.0232,1.75389 -0.13074,1.61283 -0.23564,1.71359 0.83251,-1.61437 0.39791,-2.95331 0.24494,-4.77439 -0.16846,-4.63692 -0.4899,-4.43798 -0.48937,-3.42769 -0.65836,-3.58118 -0.4284,-5.69268 -0.59686,-4.11654 -1.2547,-5.76916 -0.84181,-2.9993 -1.2852,-3.21375 -1.14773,-1.33119 -1.92805,-1.20871 z"
+                  fill="rgba(255,255,255,0.06)" stroke="none" class="muscle-path"
+                  style="cursor:pointer;transition:fill 0.4s ease;" />
+                <path id="wrist_extensors" data-muscle="wrist_extensors"
+                  d="m 70.390609,96.602253 -0.818555,1.867069 -0.964282,1.675348 -1.224214,2.02003 -1.598869,2.84634 -0.964282,2.40244 -0.50488,1.91306 -0.604613,3.83336 -0.216524,2.91093 -0.183968,2.43499 -0.313677,2.13166 -0.757576,3.24631 -0.422198,1.68775 -1.103807,3.39773 -0.530201,1.42833 1.936834,1.57975 2.564699,0.9741 2.651003,-0.16226 1.36374,-3.6251 1.319815,-2.81327 1.893943,-3.85248 2.391069,-4.07933 2.17506,-3.78737 1.33119,-3.04064 0.51934,-2.07739 0.21653,-2.64067 0.0863,-2.29392 0.43305,-1.0604 0.0326,-2.03398 -2.07791,1.20096 -0.85473,1.31982 -1.28721,2.11842 -0.739019,0.98475 -0.624768,0.80357 -0.606163,0.15658 -0.205674,-0.0811 -0.389123,-1.07126 -0.281636,-1.47174 -0.216524,-0.86558 -0.692465,-1.24437 -0.388091,-0.9555 0.0547,-1.32401 0.0259,-0.62729 -0.315743,-2.758228 z m 74.072481,0.173114 -0.14572,1.078487 -0.24294,2.450946 -0.0657,0.92899 -0.0597,1.27621 -0.21813,0.99777 -0.34623,0.62219 -0.28138,0.74388 -0.56302,2.21563 -0.38912,1.07125 -0.41722,0.10919 -0.39462,-0.18464 -0.69246,-0.80098 -1.04722,-1.58234 -0.91132,-1.5229 -0.85472,-1.32033 -2.07792,-1.20096 0.0326,2.03398 0.43305,1.0604 0.0863,2.29443 0.21652,2.64015 0.51935,2.0774 1.33119,3.04064 2.17506,3.78736 2.39107,4.07934 1.89394,3.85248 1.31981,2.81326 1.36374,3.6251 2.65101,0.16227 2.5647,-0.9741 1.93683,-1.57975 -0.5302,-1.42834 -1.10381,-3.39772 -0.4222,-1.68775 -0.75757,-3.24632 -0.31368,-2.13165 -0.18397,-2.43499 -0.21652,-2.91094 -0.60461,-3.83335 -0.50488,-1.91307 -0.96429,-2.40243 -1.59887,-2.84634 -1.22421,-2.02003 -0.96428,-1.675353 z"
+                  fill="rgba(255,255,255,0.06)" stroke="none" class="muscle-path"
+                  style="cursor:pointer;transition:fill 0.4s ease;" />
+                <path id="posterior_rotator_cuff" data-muscle="posterior_rotator_cuff"
+                  d="m 91.050326,65.054308 -0.66197,0.461986 -0.66249,0.461989 -1.10639,1.024226 -1.41852,1.439706 -1.08676,1.132232 -1.26245,1.362188 -1.26246,1.362192 -1.44591,1.369425 -1.04283,0.98702 -1.14566,0.880049 1.72134,-0.413411 0.67334,0.497644 0.46716,1.522388 0.25993,2.34146 0.50746,2.180743 1.46038,1.342038 1.58026,1.049549 1.69861,0.789615 1.43919,0.433049 2.78122,-0.04341 1.66605,-0.475941 1.85053,-0.995804 0.99529,-0.843878 1.0604,-0.995286 0.94155,-1.385445 0.28267,-0.558107 -0.20309,-0.443899 -0.38034,-1.162204 -0.54725,-1.671217 -0.50695,-2.018998 -0.38912,-1.765266 -0.29869,-1.415417 -0.19792,-1.249018 -0.0977,-0.618567 0.0729,-0.926041 0.0724,-0.925526 0.48214,-0.642856 -1.12189,-0.686263 -1.1219,-0.686779 -1.03353,-0.118856 -1.49862,-0.259932 -0.76016,-0.167949 z m 32.737544,0.0072 -0.76016,0.167949 -0.76016,0.167431 -1.49862,0.259932 -1.03353,0.118857 -1.12189,0.686781 -1.1219,0.686263 0.48214,0.642853 0.0724,0.926042 0.0729,0.925525 -0.0977,0.618567 -0.19792,1.249019 -0.29869,1.415417 -0.38913,1.765268 -0.50694,2.018999 -0.54726,1.671214 -0.38033,1.162203 -0.20309,0.443902 0.28267,0.558104 0.94154,1.385446 1.0604,0.995288 0.99529,0.843876 1.85053,0.995804 1.66605,0.47594 2.78123,0.04341 1.43919,-0.433048 1.6986,-0.789615 1.58027,-1.049549 1.46037,-1.342036 0.50746,-2.180746 0.25994,-2.341459 0.46715,-1.522389 0.67335,-0.497641 1.72134,0.413411 -1.14567,-0.880052 -1.04283,-0.98702 -1.44591,-1.369425 -1.26245,-1.362189 -1.26246,-1.362191 -1.08675,-1.132232 -1.41852,-1.439703 -1.10639,-1.024229 -0.66198,-0.461986 z"
+                  fill="rgba(255,255,255,0.06)" stroke="none" class="muscle-path"
+                  style="cursor:pointer;transition:fill 0.4s ease;" />
+                <path id="soleus" data-muscle="soleus"
+                  d="m 120.27646,214.65396 -0.44339,1.11725 -0.87281,1.79058 -1.09399,1.23197 -0.66559,0.5581 -1.16273,0.16847 -1.05626,-0.15296 -0.6811,-0.8568 -0.68057,-0.85731 0.42839,2.14251 0.39791,3.30574 0.39791,3.42769 0.3669,3.61167 0.30644,3.48868 0.27544,3.30574 -0.12247,5.90661 -0.15297,3.36672 1.68311,0.45941 0.3979,-1.68362 0.79582,-3.64216 0.45889,-3.02979 0.94878,-3.61166 1.10225,-3.15226 0.91778,-2.35645 1.43867,-3.51968 1.46916,-4.00957 0.44339,-1.80558 -1.14774,0.16847 -1.21646,-0.41342 -1.04076,-1.0945 -0.79582,-1.58337 z m -25.873364,0.12351 -0.69608,2.28048 -0.79582,1.58336 -1.04076,1.09451 -1.21646,0.41341 -1.14774,-0.16846 0.44339,1.80557 1.46916,4.00906 1.43867,3.5202 0.91777,2.35644 1.10226,3.15227 0.94878,3.61166 0.45889,3.02979 0.79581,3.64215 0.39791,1.68362 1.6831,-0.4594 -0.15296,-3.36672 -0.12247,-5.90662 0.27543,-3.30574 0.30644,-3.48867 0.36691,-3.61167 0.397914,-3.4277 0.3979,-3.30574 0.4284,-2.1425 -0.68058,0.85731 -0.849284,0.76456 -0.57715,0.24287 -1.47365,-0.16614 -0.66559,-0.5581 -1.09399,-1.23197 -0.8723,-1.79059 z"
+                  fill="rgba(255,255,255,0.06)" stroke="none" class="muscle-path"
+                  style="cursor:pointer;transition:fill 0.4s ease;" />
+                <path id="triceps_lateral_head" data-muscle="triceps_lateral_head"
+                  d="m 133.16198,75.129146 4.14134,8.436176 1.22267,1.83968 0.5302,1.038698 1.0821,1.384927 0.60565,0.692465 1.68827,2.099096 0.90899,1.601454 1.0604,2.207617 -0.0434,-2.120802 -0.0646,-2.834968 -0.32504,-1.796272 -0.43253,-1.88309 -0.58446,-1.796272 -0.58446,-1.38493 -0.88057,-1.660879 -0.5426,-0.62942 -1.37046,-1.589567 -1.02526,-0.788066 -1.02526,-0.788075 -1.89756,-1.117235 -0.74207,-0.497126 -0.86093,-0.206705 z m -51.619094,0.02479 -1.03497,0.248568 -0.55303,0.132816 -0.42603,0.332681 c -0.50946,0.249534 -1.07154,0.611063 -1.6175,0.930717 l -0.5961,0.350973 -2.05053,1.57613 -1.641756,1.904283 -0.542602,0.62942 -0.880568,1.66088 -0.584459,1.38493 -0.584462,1.796272 -0.43253,1.883087 -0.325046,1.796275 -0.06459,2.834968 -0.04341,2.120802 1.0604,-2.207618 0.908989,-1.601454 1.082103,-1.40663 1.211813,-1.38493 1.082098,-1.385446 0.5302,-1.038696 1.22267,-1.839679 z"
+                  fill="rgba(255,255,255,0.06)" stroke="none" class="muscle-path"
+                  style="cursor:pointer;transition:fill 0.4s ease;" />
+                <path id="triceps_long_head" data-muscle="triceps_long_head"
+                  d="m 133.16198,75.129146 -0.67335,0.497642 -0.46715,1.522388 -0.25994,2.341459 -0.50746,2.180747 -0.3421,2.509406 -0.55087,2.96881 0.27544,2.050521 0.64285,2.326473 1.07125,2.601391 1.77509,3.917591 0.67335,1.683101 0.95652,1.929085 1.0387,0.60048 1.03922,0.60048 0.42736,0.66042 1.65812,2.66549 0.72778,1.09966 0.69246,0.80098 c 0.39462,0.18464 0.60323,0.13004 0.81184,0.0755 l 0.1943,-0.53537 0.19482,-0.53588 0.23358,-0.9192 0.32944,-1.29643 0.28138,-0.74388 0.34623,-0.62218 0.21813,-0.99777 0.0893,-1.90903 0.20619,-1.690855 0.0729,-1.056267 0.14572,-1.078487 -0.0615,-2.346108 -0.5302,-1.10381 -0.5302,-1.103807 -0.90899,-1.601454 -0.54105,-0.703316 -1.14722,-1.39578 -0.60565,-0.692465 -1.0821,-1.384927 -0.5302,-1.038698 -1.22267,-1.83968 -0.76377,-1.555978 -0.59687,-1.215429 z m -50.812414,0.490408 c -0.26961,-0.157451 -0.67722,-0.62226 -0.80668,-0.465617 l -4.27931,8.718344 -1.22267,1.83968 -0.5302,1.038696 -1.082101,1.385445 -1.211813,1.38493 -0.541051,0.703315 -0.541052,0.703316 -0.908989,1.601454 -0.530199,1.103807 -0.530201,1.10381 0.225309,1.865519 0.218074,2.134754 0.206706,1.690853 -0.08062,1.9513 0.388091,0.9555 0.692465,1.24436 0.216524,0.86559 0.281636,1.47174 0.389123,1.07125 0.205674,0.0811 0.606163,-0.15658 1.249541,-1.60713 0.97927,-1.55288 0.42219,-0.74673 0.85473,-1.31981 2.07791,-1.20096 0.39636,-0.83768 0.88728,-1.714103 1.43868,-3.580659 1.13223,-2.570903 0.94878,-2.632398 0.48989,-2.63188 -0.30593,-2.142505 -0.30644,-2.112016 -0.19482,-1.598353 -0.25373,-1.090372 -0.38344,-2.260843 -0.13022,-1.170988 -0.23358,-0.761195 z"
+                  fill="rgba(255,255,255,0.06)" stroke="none" class="muscle-path"
+                  style="cursor:pointer;transition:fill 0.4s ease;" />
+                <path id="latissimus_dorsi" data-muscle="latissimus_dorsi"
+                  d="m 99.340266,79.980527 -1.75442,2.441194 -1.66243,1.348756 -1.85053,0.995805 -0.83303,0.237712 -2.22363,0.259932 -1.25367,0.01447 -0.71934,-0.216525 -2.41846,-1.006139 -1.58026,-1.049549 -1.46038,-1.342038 0.15038,1.234035 0.19792,1.420585 0.15296,1.055749 0.10956,0.991671 0.14521,0.783413 1.46864,3.887102 1.13275,2.846337 1.16272,2.723864 0.85731,2.203485 1.07125,3.060791 1.2852,3.02979 0.97927,1.98954 0.85731,1.83659 1.07125,1.53013 1.49965,0.73433 0.24495,0.85731 0.42839,0.45888 1.53014,1.59164 1.37718,1.56063 1.010274,0.50539 -0.031,-2.44894 0.0155,-2.5399 0.12248,-1.59163 0.12247,-1.59164 0.0997,-1.63762 0.0992,-1.63711 0.21394,-2.03554 0.13591,-1.28726 0.21549,-1.348236 0.38344,-1.680001 0.52038,-2.279965 0.29921,-1.081587 0.49661,-1.795238 0.72502,-2.621028 0.3328,-1.724959 -0.35244,-0.13281 -1.30948,-2.185911 -0.82734,-1.607138 -0.48627,-0.943612 -0.72761,-1.506368 z m 16.157674,0.0072 -0.61754,1.350304 -0.82062,1.794206 -0.82785,1.607137 -0.82734,1.606622 -1.30949,2.18591 -0.35244,0.132811 0.15348,1.469159 0.79531,2.876828 0.49661,1.795238 0.29921,1.081587 0.52038,2.280481 0.38344,1.679485 0.21549,1.348235 0.13591,1.28778 0.21394,2.03502 0.0992,1.63762 0.0997,1.63711 0.12248,1.59164 0.12247,1.59163 0.0155,2.5399 -0.031,2.44894 1.01027,-0.50539 1.37718,-1.56063 1.53014,-1.59163 0.4284,-0.45889 0.24494,-0.85731 1.49965,-0.73433 1.07126,-1.53013 0.85731,-1.83658 0.97927,-1.98955 1.28519,-3.02979 1.07125,-3.060791 0.85731,-2.203484 1.16272,-2.723864 1.13275,-2.846337 1.46865,-3.887102 0.14521,-0.783413 0.13022,-0.700733 0.27544,-1.484665 0.17105,-1.254704 0.17104,-1.254702 -1.46037,1.342036 -1.58027,1.049549 -2.41845,1.006139 -0.71934,0.216524 -1.39061,-0.0217 -2.22364,-0.259416 -0.83302,-0.238228 -1.85054,-0.995804 -2.05569,-1.839164 z"
+                  fill="rgba(255,255,255,0.06)" stroke="none" class="muscle-path"
+                  style="cursor:pointer;transition:fill 0.4s ease;" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="legend-wrap">
+          <div class="legend-bar"></div>
+          <div class="legend-labels">
+            <span>Under</span>
+            <span>Low</span>
+            <span>Balanced</span>
+            <span>High</span>
+            <span>Over</span>
+          </div>
+        </div>
+
+        <div class="table-section">
+          <span class="label">Muscle Breakdown</span>
+          <table>
+            <thead>
+              <tr>
+                <th>Muscle</th>
+                <th>Group</th>
+                <th>Relative Score</th>
+                <th>Raw Stimulus</th>
+              </tr>
+            </thead>
+            <tbody id="scoreBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="tt" id="tooltip">
+      <div class="tt-name" id="ttName"></div>
+      <div class="tt-score" id="ttScore"></div>
+      <div class="tt-hint" id="ttHint"></div>
+      <div id="ttContribWrap" style="display:none">
+        <hr class="tt-divider">
+        <div class="tt-contribs-label">Top contributors</div>
+        <div id="ttContribs"></div>
+      </div>
+    </div>
+
+    <script>
+      // ── Data ──────────────────────────────────────────────────────────────────────
+      // !!! These are actually read from the Python files,
+      // !!! not from here. Still probably smart to update occasionally
+      const MUSCLE_TARGETS = {"pectoralis_major_sternocostal": 16, "pectoralis_major_clavicular": 16, "latissimus_dorsi": 18, "trapezius_upper": 14, "trapezius_lower": 16, "rhomboids_trapezius_mid": 16, "anterior_deltoid": 7, "lateral_deltoid": 16, "posterior_deltoids": 16, "biceps_brachii": 17, "brachialis": 17, "triceps_long_head": 12, "triceps_lateral_head": 12, "rectus_femoris": 15, "vastus_lateralis": 15, "vastus_medialis": 15, "hamstrings_biceps_femoris": 13, "hamstrings_medial": 13, "gluteus_maximus": 8, "gluteus_medius": 8, "gastrocnemius": 12, "soleus": 10, "rectus_abdominis": 12, "external_obliques": 12, "spinal_erectors": 12, "serratus_anterior": 8, "posterior_rotator_cuff": 10, "hip_flexors": 5, "hip_adductors": 8, "wrist_flexors": 8, "wrist_extensors": 8, "tibialis_anterior": 4};
+      const MUSCLE_DISPLAY = {"pectoralis_major_sternocostal": "Lower Chest (Sternocostal)", "pectoralis_major_clavicular": "Upper Chest (Clavicular)", "latissimus_dorsi": "Lats", "trapezius_upper": "Upper Traps", "trapezius_lower": "Lower Traps", "rhomboids_trapezius_mid": "Rhomboids / Mid Traps", "anterior_deltoid": "Front Delts", "lateral_deltoid": "Side Delts", "posterior_deltoids": "Rear Delts", "biceps_brachii": "Biceps", "brachialis": "Brachialis", "triceps_long_head": "Triceps (Long Head)", "triceps_lateral_head": "Triceps (Lateral Head)", "rectus_femoris": "Rectus Femoris", "vastus_lateralis": "Vastus Lateralis", "vastus_medialis": "Vastus Medialis", "hamstrings_biceps_femoris": "Hamstrings (Biceps Femoris)", "hamstrings_medial": "Hamstrings (Medial)", "gluteus_maximus": "Glutes (Maximus)", "gluteus_medius": "Glutes (Medius)", "gastrocnemius": "Calves (Gastrocnemius)", "soleus": "Calves (Soleus)", "rectus_abdominis": "Rectus Abdominis", "external_obliques": "Obliques", "spinal_erectors": "Spinal Erectors", "serratus_anterior": "Serratus Anterior", "posterior_rotator_cuff": "Rotator Cuff (Posterior)", "hip_flexors": "Hip Flexors", "hip_adductors": "Hip Adductors", "wrist_flexors": "Wrist Flexors", "wrist_extensors": "Wrist Extensors", "tibialis_anterior": "Tibialis Anterior"};
+      const MUSCLE_PANEL = {"biceps_brachii": "anterior", "brachialis": "anterior", "lateral_deltoid": "anterior", "anterior_deltoid": "anterior", "pectoralis_major_sternocostal": "anterior", "pectoralis_major_clavicular": "anterior", "serratus_anterior": "anterior", "rectus_abdominis": "anterior", "external_obliques": "anterior", "hip_flexors": "anterior", "hip_adductors": "anterior", "rectus_femoris": "anterior", "vastus_lateralis": "anterior", "vastus_medialis": "anterior", "tibialis_anterior": "anterior", "wrist_flexors": "anterior", "trapezius_upper": "posterior", "trapezius_lower": "posterior", "rhomboids_trapezius_mid": "posterior", "posterior_deltoids": "posterior", "posterior_rotator_cuff": "posterior", "latissimus_dorsi": "posterior", "triceps_long_head": "posterior", "triceps_lateral_head": "posterior", "wrist_extensors": "posterior", "spinal_erectors": "posterior", "gluteus_maximus": "posterior", "gluteus_medius": "posterior", "hamstrings_biceps_femoris": "posterior", "hamstrings_medial": "posterior", "gastrocnemius": "posterior", "soleus": "posterior"};
+      const CATEGORY_ORDER = ["Chest", "Back", "Shoulders", "Biceps", "Triceps", "Quads", "Hamstrings", "Glutes", "Traps", "Calves", "Abs", "Forearms"];
+      const EXERCISES = {"Barbell Bench Press (Flat)": {"cat": "Chest", "m": {"pectoralis_major_sternocostal": 1.0, "pectoralis_major_clavicular": 0.55, "anterior_deltoid": 0.45, "triceps_long_head": 0.6, "triceps_lateral_head": 0.65, "lateral_deltoid": 0.12, "serratus_anterior": 0.5, "biceps_brachii": 0.1, "rectus_abdominis": 0.08, "external_obliques": 0.08}}, "Incline Barbell Bench Press": {"cat": "Chest", "m": {"pectoralis_major_clavicular": 1.0, "pectoralis_major_sternocostal": 0.65, "anterior_deltoid": 0.62, "triceps_long_head": 0.5, "triceps_lateral_head": 0.55, "lateral_deltoid": 0.15, "serratus_anterior": 0.45, "biceps_brachii": 0.08, "rectus_abdominis": 0.08, "external_obliques": 0.08}}, "Decline Barbell Bench Press": {"cat": "Chest", "m": {"pectoralis_major_sternocostal": 1.0, "pectoralis_major_clavicular": 0.35, "anterior_deltoid": 0.4, "triceps_long_head": 0.75, "triceps_lateral_head": 0.8, "lateral_deltoid": 0.08, "rectus_abdominis": 0.08, "external_obliques": 0.08}}, "Smith Machine Bench Press (Flat)": {"cat": "Chest", "m": {"pectoralis_major_sternocostal": 1.0, "pectoralis_major_clavicular": 0.55, "anterior_deltoid": 0.45, "triceps_long_head": 0.6, "triceps_lateral_head": 0.65, "lateral_deltoid": 0.08, "serratus_anterior": 0.4, "biceps_brachii": 0.08, "rectus_abdominis": 0.05, "external_obliques": 0.05}}, "Smith Machine Incline Bench Press": {"cat": "Chest", "m": {"pectoralis_major_clavicular": 1.0, "pectoralis_major_sternocostal": 0.65, "anterior_deltoid": 0.62, "triceps_long_head": 0.5, "triceps_lateral_head": 0.55, "lateral_deltoid": 0.08, "biceps_brachii": 0.08, "serratus_anterior": 0.4, "rectus_abdominis": 0.05, "external_obliques": 0.05}}, "Dumbbell Bench Press (Flat)": {"cat": "Chest", "m": {"pectoralis_major_sternocostal": 0.9, "pectoralis_major_clavicular": 0.55, "anterior_deltoid": 0.5, "triceps_long_head": 0.55, "triceps_lateral_head": 0.6, "biceps_brachii": 0.1, "serratus_anterior": 0.45, "rectus_abdominis": 0.1, "external_obliques": 0.1}}, "Incline Dumbbell Bench Press": {"cat": "Chest", "m": {"pectoralis_major_clavicular": 0.95, "pectoralis_major_sternocostal": 0.55, "anterior_deltoid": 0.58, "triceps_long_head": 0.45, "triceps_lateral_head": 0.5, "biceps_brachii": 0.1, "rectus_abdominis": 0.08, "external_obliques": 0.08}}, "Dumbbell Fly (Flat)": {"cat": "Chest", "m": {"pectoralis_major_sternocostal": 0.85, "pectoralis_major_clavicular": 0.6, "anterior_deltoid": 0.35, "biceps_brachii": 0.15, "serratus_anterior": 0.3}}, "Incline Dumbbell Fly": {"cat": "Chest", "m": {"pectoralis_major_clavicular": 0.9, "pectoralis_major_sternocostal": 0.5, "anterior_deltoid": 0.4, "biceps_brachii": 0.15}}, "Cable Crossover (Low-to-High)": {"cat": "Chest", "m": {"pectoralis_major_clavicular": 0.85, "pectoralis_major_sternocostal": 0.65, "anterior_deltoid": 0.4, "biceps_brachii": 0.15, "serratus_anterior": 0.25}}, "Cable Crossover (High-to-Low)": {"cat": "Chest", "m": {"pectoralis_major_sternocostal": 0.9, "pectoralis_major_clavicular": 0.4, "anterior_deltoid": 0.3, "biceps_brachii": 0.1}}, "Pec Deck / Machine Fly": {"cat": "Chest", "m": {"pectoralis_major_sternocostal": 0.85, "pectoralis_major_clavicular": 0.65, "anterior_deltoid": 0.25}}, "Close-Grip Bench Press": {"cat": "Chest", "m": {"triceps_lateral_head": 0.95, "triceps_long_head": 0.85, "pectoralis_major_sternocostal": 0.6, "anterior_deltoid": 0.45, "rectus_abdominis": 0.05, "external_obliques": 0.05}}, "Push-Up (Standard)": {"cat": "Chest", "m": {"pectoralis_major_sternocostal": 0.8, "pectoralis_major_clavicular": 0.5, "anterior_deltoid": 0.7, "triceps_long_head": 0.5, "triceps_lateral_head": 0.55, "serratus_anterior": 0.8, "biceps_brachii": 0.12, "rectus_abdominis": 0.08, "external_obliques": 0.08}}, "Diamond / Tricep Push-Up": {"cat": "Chest", "m": {"triceps_long_head": 0.9, "triceps_lateral_head": 0.9, "pectoralis_major_sternocostal": 0.5, "anterior_deltoid": 0.45, "serratus_anterior": 0.55, "biceps_brachii": 0.1, "rectus_abdominis": 0.08, "external_obliques": 0.08}}, "Dip (Chest-Focused)": {"cat": "Chest", "m": {"pectoralis_major_sternocostal": 0.8, "pectoralis_major_clavicular": 0.35, "triceps_long_head": 0.75, "triceps_lateral_head": 0.8, "anterior_deltoid": 0.55, "rectus_abdominis": 0.08, "external_obliques": 0.08}}, "Wide-Grip Lat Pulldown": {"cat": "Back", "m": {"latissimus_dorsi": 1.0, "rhomboids_trapezius_mid": 0.55, "trapezius_lower": 0.4, "posterior_deltoids": 0.35, "biceps_brachii": 0.7, "brachialis": 0.6, "posterior_rotator_cuff": 0.45, "serratus_anterior": 0.18, "wrist_extensors": 0.15, "wrist_flexors": 0.1, "lateral_deltoid": 0.1}}, "Neutral-Grip Lat Pulldown": {"cat": "Back", "m": {"latissimus_dorsi": 0.95, "rhomboids_trapezius_mid": 0.55, "trapezius_lower": 0.45, "posterior_deltoids": 0.3, "biceps_brachii": 0.75, "brachialis": 0.65, "posterior_rotator_cuff": 0.45, "wrist_extensors": 0.15, "wrist_flexors": 0.15, "serratus_anterior": 0.15}}, "Pull-Up (Pronated)": {"cat": "Back", "m": {"latissimus_dorsi": 1.0, "trapezius_lower": 0.65, "rhomboids_trapezius_mid": 0.6, "posterior_deltoids": 0.4, "biceps_brachii": 0.65, "brachialis": 0.55, "posterior_rotator_cuff": 0.55, "spinal_erectors": 0.35, "wrist_flexors": 0.12, "wrist_extensors": 0.12, "serratus_anterior": 0.2, "lateral_deltoid": 0.1, "rectus_abdominis": 0.1, "external_obliques": 0.1}}, "Pull-Up (Neutral Grip)": {"cat": "Back", "m": {"latissimus_dorsi": 1.0, "biceps_brachii": 0.75, "brachialis": 0.65, "trapezius_lower": 0.6, "rhomboids_trapezius_mid": 0.6, "posterior_deltoids": 0.35, "serratus_anterior": 0.2, "posterior_rotator_cuff": 0.5, "spinal_erectors": 0.35, "wrist_flexors": 0.18, "rectus_abdominis": 0.1, "external_obliques": 0.1}}, "Chin-Up (Supinated)": {"cat": "Back", "m": {"latissimus_dorsi": 0.95, "biceps_brachii": 0.9, "brachialis": 0.75, "pectoralis_major_sternocostal": 0.25, "rhomboids_trapezius_mid": 0.45, "trapezius_lower": 0.45, "spinal_erectors": 0.45, "posterior_rotator_cuff": 0.4, "serratus_anterior": 0.18, "posterior_deltoids": 0.3, "lateral_deltoid": 0.05, "wrist_flexors": 0.2, "rectus_abdominis": 0.1, "external_obliques": 0.1}}, "Seated Cable Row (Close/Neutral Grip)": {"cat": "Back", "m": {"latissimus_dorsi": 0.85, "rhomboids_trapezius_mid": 0.9, "trapezius_lower": 0.6, "posterior_deltoids": 0.5, "biceps_brachii": 0.7, "brachialis": 0.6, "posterior_rotator_cuff": 0.5, "wrist_flexors": 0.2, "wrist_extensors": 0.15}}, "Seated Cable Row (Wide/Overhand Grip)": {"cat": "Back", "m": {"latissimus_dorsi": 0.8, "rhomboids_trapezius_mid": 0.8, "trapezius_lower": 0.65, "posterior_deltoids": 0.6, "biceps_brachii": 0.55, "brachialis": 0.5, "posterior_rotator_cuff": 0.45, "wrist_flexors": 0.1, "wrist_extensors": 0.2}}, "Bent-Over Barbell Row": {"cat": "Back", "m": {"latissimus_dorsi": 0.9, "rhomboids_trapezius_mid": 0.9, "trapezius_upper": 0.35, "trapezius_lower": 0.55, "posterior_deltoids": 0.55, "spinal_erectors": 0.55, "biceps_brachii": 0.7, "brachialis": 0.6, "posterior_rotator_cuff": 0.5, "wrist_flexors": 0.12, "wrist_extensors": 0.18, "external_obliques": 0.25, "rectus_abdominis": 0.15}}, "Chest-Supported Row (Machine / DB)": {"cat": "Back", "m": {"latissimus_dorsi": 0.85, "rhomboids_trapezius_mid": 0.85, "trapezius_lower": 0.55, "posterior_deltoids": 0.45, "biceps_brachii": 0.65, "brachialis": 0.55, "posterior_rotator_cuff": 0.5, "wrist_flexors": 0.15, "wrist_extensors": 0.1}}, "Single-Arm Dumbbell Row": {"cat": "Back", "m": {"latissimus_dorsi": 0.9, "rhomboids_trapezius_mid": 0.7, "posterior_deltoids": 0.45, "biceps_brachii": 0.7, "brachialis": 0.6, "posterior_rotator_cuff": 0.5, "external_obliques": 0.4, "spinal_erectors": 0.4, "wrist_flexors": 0.15, "wrist_extensors": 0.12}}, "Inverted Row (Bodyweight)": {"cat": "Back", "m": {"latissimus_dorsi": 0.75, "rhomboids_trapezius_mid": 0.85, "trapezius_upper": 0.35, "posterior_deltoids": 0.5, "biceps_brachii": 0.7, "brachialis": 0.6, "posterior_rotator_cuff": 0.45, "wrist_flexors": 0.08, "wrist_extensors": 0.08}}, "T-Bar Row": {"cat": "Back", "m": {"latissimus_dorsi": 0.88, "rhomboids_trapezius_mid": 0.85, "trapezius_lower": 0.5, "posterior_deltoids": 0.5, "spinal_erectors": 0.55, "biceps_brachii": 0.65, "brachialis": 0.55, "posterior_rotator_cuff": 0.45, "wrist_flexors": 0.18, "wrist_extensors": 0.12, "external_obliques": 0.2, "rectus_abdominis": 0.15}}, "Straight-Arm Pulldown (Cable)": {"cat": "Back", "m": {"latissimus_dorsi": 0.85, "triceps_long_head": 0.25, "serratus_anterior": 0.3, "posterior_rotator_cuff": 0.3}}, "Barbell Overhead Press": {"cat": "Shoulders", "m": {"anterior_deltoid": 1.0, "lateral_deltoid": 0.6, "triceps_long_head": 0.7, "triceps_lateral_head": 0.8, "serratus_anterior": 0.65, "trapezius_upper": 0.5, "spinal_erectors": 0.4, "trapezius_lower": 0.3, "posterior_rotator_cuff": 0.35, "rectus_abdominis": 0.15, "external_obliques": 0.2}}, "Dumbbell Overhead Press": {"cat": "Shoulders", "m": {"anterior_deltoid": 0.95, "lateral_deltoid": 0.65, "triceps_long_head": 0.65, "serratus_anterior": 0.55, "triceps_lateral_head": 0.75, "trapezius_upper": 0.45, "spinal_erectors": 0.4, "posterior_rotator_cuff": 0.35, "trapezius_lower": 0.25, "rectus_abdominis": 0.15, "external_obliques": 0.15}}, "Arnold Press": {"cat": "Shoulders", "m": {"anterior_deltoid": 0.9, "lateral_deltoid": 0.75, "triceps_long_head": 0.65, "triceps_lateral_head": 0.7, "serratus_anterior": 0.55, "spinal_erectors": 0.4, "posterior_rotator_cuff": 0.35, "trapezius_lower": 0.25, "external_obliques": 0.15, "rectus_abdominis": 0.15}}, "Lateral Raise (Dumbbell)": {"cat": "Shoulders", "m": {"lateral_deltoid": 1.0, "posterior_deltoids": 0.55, "trapezius_upper": 0.3}}, "Cable Lateral Raise": {"cat": "Shoulders", "m": {"lateral_deltoid": 0.95, "posterior_deltoids": 0.45, "trapezius_upper": 0.25}}, "Machine Lateral Raise": {"cat": "Shoulders", "m": {"lateral_deltoid": 0.9, "posterior_deltoids": 0.4}}, "Front Raise (Dumbbell / Cable)": {"cat": "Shoulders", "m": {"anterior_deltoid": 0.9, "pectoralis_major_clavicular": 0.2, "lateral_deltoid": 0.15, "trapezius_lower": 0.1}}, "Rear Delt Fly (Dumbbell, Bent-Over)": {"cat": "Shoulders", "m": {"posterior_deltoids": 1.0, "rhomboids_trapezius_mid": 0.4, "trapezius_lower": 0.3, "posterior_rotator_cuff": 0.5, "spinal_erectors": 0.2, "external_obliques": 0.1}}, "Reverse Pec Deck": {"cat": "Shoulders", "m": {"posterior_deltoids": 1.0, "rhomboids_trapezius_mid": 0.35, "posterior_rotator_cuff": 0.45}}, "Face Pull (Cable)": {"cat": "Shoulders", "m": {"posterior_deltoids": 0.9, "posterior_rotator_cuff": 0.75, "rhomboids_trapezius_mid": 0.45, "trapezius_lower": 0.5, "lateral_deltoid": 0.2}}, "Cable External Rotation (90\u00b0 Abduction)": {"cat": "Shoulders", "m": {"posterior_rotator_cuff": 1.0, "posterior_deltoids": 0.3}}, "External Rotation (Dumbbell, Side-Lying)": {"cat": "Shoulders", "m": {"posterior_rotator_cuff": 0.85, "posterior_deltoids": 0.2}}, "Barbell Curl": {"cat": "Biceps", "m": {"biceps_brachii": 1.0, "brachialis": 0.65, "wrist_flexors": 0.3}}, "EZ-Bar Curl": {"cat": "Biceps", "m": {"biceps_brachii": 0.95, "brachialis": 0.65, "wrist_flexors": 0.18, "wrist_extensors": 0.12}}, "Dumbbell Curl (Supinated)": {"cat": "Biceps", "m": {"biceps_brachii": 0.9, "brachialis": 0.65, "wrist_flexors": 0.12, "wrist_extensors": 0.12}}, "Hammer Curl": {"cat": "Biceps", "m": {"biceps_brachii": 0.65, "brachialis": 0.9, "wrist_flexors": 0.2}}, "Reverse Curl (Pronated)": {"cat": "Biceps", "m": {"brachialis": 1.0, "biceps_brachii": 0.45, "wrist_extensors": 0.35}}, "Preacher Curl": {"cat": "Biceps", "m": {"biceps_brachii": 0.95, "brachialis": 0.75, "wrist_flexors": 0.25}}, "Incline Dumbbell Curl": {"cat": "Biceps", "m": {"biceps_brachii": 0.9, "brachialis": 0.55, "wrist_flexors": 0.2}}, "Concentration Curl": {"cat": "Biceps", "m": {"biceps_brachii": 0.9, "brachialis": 0.6, "wrist_flexors": 0.2}}, "Cable Curl": {"cat": "Biceps", "m": {"biceps_brachii": 0.9, "brachialis": 0.65, "wrist_flexors": 0.2}}, "Cable Pushdown (Straight Bar/V-Bar)": {"cat": "Triceps", "m": {"triceps_lateral_head": 1.0, "triceps_long_head": 0.6, "wrist_extensors": 0.15}}, "Rope Pushdown": {"cat": "Triceps", "m": {"triceps_lateral_head": 0.9, "triceps_long_head": 0.7, "wrist_extensors": 0.08}}, "Overhead Tricep Extension (Cable / Dumbbell)": {"cat": "Triceps", "m": {"triceps_long_head": 1.0, "triceps_lateral_head": 0.75, "wrist_extensors": 0.08}}, "Skull Crusher (EZ-Bar / Barbell)": {"cat": "Triceps", "m": {"triceps_long_head": 0.9, "triceps_lateral_head": 0.85, "wrist_flexors": 0.1, "wrist_extensors": 0.1}}, "Dumbbell Kickback": {"cat": "Triceps", "m": {"triceps_long_head": 0.85, "triceps_lateral_head": 0.8}}, "Dip (Tricep-Focused / Upright)": {"cat": "Triceps", "m": {"triceps_long_head": 0.9, "triceps_lateral_head": 0.9, "pectoralis_major_sternocostal": 0.55, "anterior_deltoid": 0.55, "external_obliques": 0.1, "rectus_abdominis": 0.1}}, "JM Press": {"cat": "Triceps", "m": {"triceps_lateral_head": 0.9, "triceps_long_head": 0.85, "pectoralis_major_sternocostal": 0.35, "wrist_extensors": 0.1, "wrist_flexors": 0.1}}, "Back Squat": {"cat": "Quads", "m": {"vastus_lateralis": 0.9, "vastus_medialis": 0.85, "rectus_femoris": 0.8, "gluteus_maximus": 0.6, "hamstrings_biceps_femoris": 0.3, "hamstrings_medial": 0.3, "spinal_erectors": 0.45, "hip_adductors": 0.35, "hip_flexors": 0.15, "gastrocnemius": 0.25, "external_obliques": 0.25, "rectus_abdominis": 0.2, "tibialis_anterior": 0.08, "soleus": 0.08}}, "Front Squat": {"cat": "Quads", "m": {"vastus_lateralis": 1.0, "vastus_medialis": 0.95, "rectus_femoris": 0.9, "gluteus_maximus": 0.5, "hamstrings_biceps_femoris": 0.25, "hamstrings_medial": 0.25, "spinal_erectors": 0.45, "hip_flexors": 0.15, "gastrocnemius": 0.25, "external_obliques": 0.3, "rectus_abdominis": 0.25, "tibialis_anterior": 0.12, "soleus": 0.08}}, "Sumo Back Squat": {"cat": "Quads", "m": {"vastus_lateralis": 0.85, "vastus_medialis": 0.9, "rectus_femoris": 0.75, "gluteus_maximus": 0.6, "hip_adductors": 0.65, "hamstrings_medial": 0.3, "spinal_erectors": 0.45, "gastrocnemius": 0.2, "external_obliques": 0.2, "rectus_abdominis": 0.1, "hip_flexors": 0.12, "tibialis_anterior": 0.05, "soleus": 0.06}}, "Leg Press (Standard Foot Placement)": {"cat": "Quads", "m": {"vastus_lateralis": 1.0, "vastus_medialis": 1.0, "rectus_femoris": 0.8, "gluteus_maximus": 0.55, "gastrocnemius": 0.25, "hamstrings_biceps_femoris": 0.2, "hamstrings_medial": 0.2, "hip_flexors": 0.15}}, "Hack Squat (Machine)": {"cat": "Quads", "m": {"vastus_lateralis": 0.95, "vastus_medialis": 0.95, "rectus_femoris": 0.85, "gluteus_maximus": 0.45, "gastrocnemius": 0.2, "hip_flexors": 0.2, "soleus": 0.06}}, "Leg Extension": {"cat": "Quads", "m": {"rectus_femoris": 1.0, "vastus_lateralis": 0.7, "vastus_medialis": 0.75, "tibialis_anterior": 0.05}}, "Bulgarian Split Squat (Upright Trunk)": {"cat": "Quads", "m": {"rectus_femoris": 0.85, "vastus_lateralis": 0.85, "vastus_medialis": 0.85, "gluteus_maximus": 0.6, "gluteus_medius": 0.55, "hamstrings_medial": 0.35, "gastrocnemius": 0.2, "hip_flexors": 0.2, "external_obliques": 0.15, "rectus_abdominis": 0.1, "tibialis_anterior": 0.08, "soleus": 0.1}}, "Bulgarian Split Squat (Forward Lean)": {"cat": "Quads", "m": {"gluteus_maximus": 0.8, "hamstrings_biceps_femoris": 0.5, "hamstrings_medial": 0.5, "rectus_femoris": 0.65, "vastus_lateralis": 0.65, "vastus_medialis": 0.65, "gluteus_medius": 0.5, "gastrocnemius": 0.2, "hip_flexors": 0.15, "external_obliques": 0.15, "rectus_abdominis": 0.1, "tibialis_anterior": 0.08, "soleus": 0.1}}, "Lunge (Forward)": {"cat": "Quads", "m": {"rectus_femoris": 0.7, "vastus_lateralis": 0.7, "vastus_medialis": 0.65, "gluteus_maximus": 0.7, "gluteus_medius": 0.7, "hamstrings_biceps_femoris": 0.25, "gastrocnemius": 0.2, "hip_flexors": 0.15, "external_obliques": 0.1, "rectus_abdominis": 0.1, "tibialis_anterior": 0.06, "soleus": 0.06}}, "Step-Up": {"cat": "Quads", "m": {"gluteus_maximus": 0.8, "gluteus_medius": 0.8, "rectus_femoris": 0.6, "vastus_lateralis": 0.6, "vastus_medialis": 0.55, "gastrocnemius": 0.15, "hip_flexors": 0.15, "external_obliques": 0.1, "tibialis_anterior": 0.06, "soleus": 0.06}}, "Pistol Squat / Single-Leg Squat": {"cat": "Quads", "m": {"rectus_femoris": 0.9, "vastus_lateralis": 0.9, "vastus_medialis": 0.9, "gluteus_maximus": 0.7, "gluteus_medius": 0.75, "hip_flexors": 0.35, "hamstrings_medial": 0.35, "tibialis_anterior": 0.2, "gastrocnemius": 0.15, "external_obliques": 0.15, "rectus_abdominis": 0.1, "soleus": 0.15}}, "Hip Adduction Machine": {"cat": "Glutes", "m": {"hip_adductors": 1.0, "gluteus_medius": 0.2}}, "Romanian Deadlift (RDL)": {"cat": "Hamstrings", "m": {"hamstrings_medial": 0.9, "hamstrings_biceps_femoris": 0.8, "gluteus_maximus": 0.8, "gluteus_medius": 0.15, "spinal_erectors": 0.45, "hip_adductors": 0.3, "gastrocnemius": 0.15, "external_obliques": 0.18, "rectus_abdominis": 0.12, "tibialis_anterior": 0.04, "soleus": 0.04}}, "Step-RDL": {"cat": "Hamstrings", "m": {"hamstrings_medial": 0.95, "gluteus_maximus": 0.85, "hamstrings_biceps_femoris": 0.8, "spinal_erectors": 0.45, "gastrocnemius": 0.15, "external_obliques": 0.15, "tibialis_anterior": 0.08, "rectus_abdominis": 0.05, "soleus": 0.06}}, "Conventional Deadlift": {"cat": "Hamstrings", "m": {"hamstrings_biceps_femoris": 0.8, "hamstrings_medial": 0.7, "gluteus_maximus": 0.8, "gluteus_medius": 0.12, "spinal_erectors": 0.7, "rectus_femoris": 0.5, "vastus_lateralis": 0.55, "wrist_flexors": 0.45, "external_obliques": 0.35, "hip_adductors": 0.3, "rectus_abdominis": 0.25, "gastrocnemius": 0.2, "tibialis_anterior": 0.04, "soleus": 0.04}}, "Hex Bar / Trap Bar Deadlift": {"cat": "Hamstrings", "m": {"vastus_lateralis": 0.8, "vastus_medialis": 0.75, "gluteus_maximus": 0.8, "gluteus_medius": 0.12, "hamstrings_biceps_femoris": 0.6, "spinal_erectors": 0.65, "hip_adductors": 0.3, "gastrocnemius": 0.2, "external_obliques": 0.08, "rectus_abdominis": 0.08, "tibialis_anterior": 0.04, "soleus": 0.04}}, "Stiff-Leg Deadlift": {"cat": "Hamstrings", "m": {"hamstrings_biceps_femoris": 0.75, "hamstrings_medial": 0.7, "spinal_erectors": 0.7, "gluteus_maximus": 0.7, "gluteus_medius": 0.1, "gastrocnemius": 0.15, "external_obliques": 0.1, "soleus": 0.06, "tibialis_anterior": 0.05}}, "Nordic Curl": {"cat": "Hamstrings", "m": {"hamstrings_biceps_femoris": 1.0, "hamstrings_medial": 0.85, "gastrocnemius": 0.3}}, "Lying Leg Curl": {"cat": "Hamstrings", "m": {"hamstrings_biceps_femoris": 0.85, "hamstrings_medial": 0.9, "gastrocnemius": 0.35}}, "Seated Leg Curl": {"cat": "Hamstrings", "m": {"hamstrings_medial": 0.95, "hamstrings_biceps_femoris": 0.8}}, "Glute-Ham Raise (GHR)": {"cat": "Hamstrings", "m": {"hamstrings_medial": 0.9, "hamstrings_biceps_femoris": 0.9, "gluteus_maximus": 0.5, "gastrocnemius": 0.4}}, "Good Morning": {"cat": "Hamstrings", "m": {"hamstrings_medial": 0.7, "hamstrings_biceps_femoris": 0.6, "spinal_erectors": 0.8, "gluteus_maximus": 0.55, "gluteus_medius": 0.15, "external_obliques": 0.18, "gastrocnemius": 0.15, "hip_flexors": 0.1, "tibialis_anterior": 0.05}}, "Roman Chair / Back Extension": {"cat": "Hamstrings", "m": {"hamstrings_biceps_femoris": 0.85, "gluteus_maximus": 0.6, "spinal_erectors": 0.7, "hamstrings_medial": 0.55}}, "Barbell Hip Thrust": {"cat": "Glutes", "m": {"gluteus_maximus": 1.0, "gluteus_medius": 0.65, "vastus_lateralis": 0.5, "hip_adductors": 0.45, "hamstrings_biceps_femoris": 0.4, "hamstrings_medial": 0.35, "external_obliques": 0.12, "rectus_abdominis": 0.08}}, "Barbell Glute Bridge": {"cat": "Glutes", "m": {"gluteus_maximus": 0.95, "gluteus_medius": 0.7, "hip_adductors": 0.4, "hamstrings_biceps_femoris": 0.35, "external_obliques": 0.1, "rectus_abdominis": 0.06}}, "Hip Abduction Machine": {"cat": "Glutes", "m": {"gluteus_medius": 1.0, "gluteus_maximus": 0.2}}, "Cable Kickback": {"cat": "Glutes", "m": {"gluteus_maximus": 0.8, "hamstrings_biceps_femoris": 0.3, "hip_adductors": 0.2}}, "Barbell Shrug": {"cat": "Traps", "m": {"trapezius_upper": 1.0, "trapezius_lower": 0.25, "rhomboids_trapezius_mid": 0.3, "spinal_erectors": 0.2}}, "Dumbbell Shrug": {"cat": "Traps", "m": {"trapezius_upper": 0.9, "rhomboids_trapezius_mid": 0.25, "spinal_erectors": 0.15}}, "Rack Pull": {"cat": "Traps", "m": {"trapezius_upper": 0.8, "spinal_erectors": 0.65, "rhomboids_trapezius_mid": 0.4, "hamstrings_biceps_femoris": 0.5, "gluteus_maximus": 0.55, "external_obliques": 0.3, "rectus_abdominis": 0.1}}, "Prone Y Raise (Cable / Band)": {"cat": "Traps", "m": {"trapezius_lower": 1.0, "posterior_rotator_cuff": 0.5, "rhomboids_trapezius_mid": 0.35, "posterior_deltoids": 0.3}}, "Band Pull-Apart": {"cat": "Traps", "m": {"posterior_deltoids": 0.6, "rhomboids_trapezius_mid": 0.45, "trapezius_lower": 0.4, "posterior_rotator_cuff": 0.35}}, "Standing Calf Raise": {"cat": "Calves", "m": {"gastrocnemius": 1.0, "soleus": 0.6, "tibialis_anterior": 0.1}}, "Seated Calf Raise": {"cat": "Calves", "m": {"soleus": 1.0, "gastrocnemius": 0.35}}, "Donkey Calf Raise": {"cat": "Calves", "m": {"gastrocnemius": 0.95, "soleus": 0.55}}, "Leg Press Calf Raise": {"cat": "Calves", "m": {"gastrocnemius": 0.85, "soleus": 0.5}}, "Tibialis Raise (Tib Bar / Heel)": {"cat": "Calves", "m": {"tibialis_anterior": 1.0}}, "Crunch": {"cat": "Abs", "m": {"rectus_abdominis": 1.0, "external_obliques": 0.3, "hip_flexors": 0.25}}, "Cable Crunch": {"cat": "Abs", "m": {"rectus_abdominis": 1.0, "external_obliques": 0.35, "hip_flexors": 0.2}}, "Hanging Leg Raise": {"cat": "Abs", "m": {"rectus_abdominis": 0.9, "hip_flexors": 0.85, "external_obliques": 0.5}}, "Ab Wheel Rollout": {"cat": "Abs", "m": {"rectus_abdominis": 0.9, "external_obliques": 0.65, "spinal_erectors": 0.4}}, "Oblique Crunch": {"cat": "Abs", "m": {"external_obliques": 1.0, "rectus_abdominis": 0.4}}, "Pallof Press": {"cat": "Abs", "m": {"external_obliques": 0.85, "rectus_abdominis": 0.4, "spinal_erectors": 0.3}}, "Plank": {"cat": "Abs", "m": {"rectus_abdominis": 0.6, "external_obliques": 0.6, "spinal_erectors": 0.5, "serratus_anterior": 0.4}}, "Side Plank": {"cat": "Abs", "m": {"external_obliques": 0.8, "hip_adductors": 0.4, "gluteus_medius": 0.35}}, "Decline Sit-Up": {"cat": "Abs", "m": {"rectus_abdominis": 0.9, "hip_flexors": 0.7, "external_obliques": 0.3}}, "Wrist Curl": {"cat": "Forearms", "m": {"wrist_flexors": 1.0}}, "Reverse Wrist Curl": {"cat": "Forearms", "m": {"wrist_extensors": 1.0}}, "Farmer's Carry": {"cat": "Forearms", "m": {"wrist_flexors": 0.5, "wrist_extensors": 0.4, "trapezius_upper": 0.6, "spinal_erectors": 0.5, "external_obliques": 0.3, "rectus_abdominis": 0.2, "tibialis_anterior": 0.15, "soleus": 0.15}}};
+
+      // Israetel group for table display
+      const ISRAETEL_GROUP = {
+        "pectoralis_major_sternocostal": "Chest",
+        "pectoralis_major_clavicular": "Chest",
+        "latissimus_dorsi": "Back",
+        "trapezius_upper": "Traps",
+        "trapezius_lower": "Traps",
+        "rhomboids_trapezius_mid": "Traps",
+        "anterior_deltoid": "Front Delts",
+        "lateral_deltoid": "Rear+Side Delts",
+        "posterior_deltoids": "Rear+Side Delts",
+        "biceps_brachii": "Biceps",
+        "brachialis": "Biceps",
+        "triceps_long_head": "Triceps",
+        "triceps_lateral_head": "Triceps",
+        "rectus_femoris": "Quads",
+        "vastus_lateralis": "Quads",
+        "vastus_medialis": "Quads",
+        "hamstrings_biceps_femoris": "Hamstrings",
+        "hamstrings_medial": "Hamstrings",
+        "gluteus_maximus": "Glutes",
+        "gluteus_medius": "Glutes",
+        "gastrocnemius": "Calves",
+        "soleus": "Calves",
+        "rectus_abdominis": "Abs",
+        "external_obliques": "Abs",
+        "spinal_erectors": "Secondary",
+        "serratus_anterior": "Secondary",
+        "posterior_rotator_cuff": "Secondary",
+        "hip_flexors": "Secondary",
+        "hip_adductors": "Secondary",
+        "wrist_flexors": "Secondary",
+        "wrist_extensors": "Secondary",
+        "tibialis_anterior": "Secondary",
+      };
+
+      // ── Modifiers ─────────────────────────────────────────────────────────────────
+      const RIR_MOD = { 0: 1.0, 1: 0.8, 3: 0.6, 5: 0.5 };
+      const LOAD_MOD = { light: 0.90, moderate: 1.0, heavy: 1.05, very_heavy: 1.10 };
+
+      // ── Baseline Activation ────────────────────────────────────────────────────────
+      // Setting all constants to 0 for now - will consider updating with
+      // lifestyle questions in the future.
+      const DAILY_ACTIVITY_BASELINE = {
+        // Locomotion muscles — meaningful daily load
+        tibialis_anterior: 0,   // walking = near-constant eccentric load
+        gastrocnemius: 0,   // walking, stair climbing
+        soleus: 0,   // sustained postural load (even sitting)
+        hip_flexors: 0,   // walking, sitting-to-standing
+        gluteus_medius: 0,   // single-leg balance during gait
+
+        // Postural / core — constant low-level bracing
+        spinal_erectors: 0,   // postural all day
+        rectus_abdominis: 0,   // postural bracing
+        external_obliques: 0,   // rotational stability
+
+        // Grip — meaningful for anyone using their hands
+        wrist_flexors: 0,
+        wrist_extensors: 0,
+      };
+
+      // ── Alias Searching ─────────────────────────────────────────────────────────────────────
+      const CATEGORY_ALIASES = {
+        "Shoulders": ["shoulder", "delt", "delts"],
+        "Calves": ["calf"],
+        "Abs": ["core"],
+        "Back": ["lat", "lats"],
+      };
+
+      // ── State ─────────────────────────────────────────────────────────────────────
+      let workoutEntries = [];
+      let nextId = 0;
+
+      const SPLIT_PRESETS = {
+        none: { days: [{ name: 'Workout', freq: 1 }] },
+        ppl: { days: [{ name: 'Push', freq: 1 }, { name: 'Pull', freq: 1 }, { name: 'Legs', freq: 1 }] },
+        ul: { days: [{ name: 'Upper', freq: 1 }, { name: 'Lower', freq: 1 }] },
+        fb: { days: [{ name: 'Full Body', freq: 1 }] },
+      };
+      let activeSplit = SPLIT_PRESETS.none;
+      let customSplitDays = [{ name: 'Day 1', freq: 1 }, { name: 'Day 2', freq: 1 }];
+      let activeDayIndex = 0;
+      let selectedExercise = null;
+      let editingId = null;
+      let pendingSplitKey = null;
+      let activeSplitKey = 'none';
+
+      // ── Split helpers ─────────────────────────────────────────────────────────────
+      function requestSplitChange(key) {
+        if (workoutEntries.length > 0) {
+          pendingSplitKey = key;
+          document.getElementById('splitModal').classList.add('open');
+        } else {
+          setSplit(key);
+        }
+      }
+
+      function cancelSplitChange() {
+        document.getElementById('splitModal').classList.remove('open');
+        document.getElementById('selSplit').value = activeSplitKey;
+        pendingSplitKey = null;
+      }
+
+      function confirmSplitChange() {
+        document.getElementById('splitModal').classList.remove('open');
+        workoutEntries = [];
+        editingId = null;
+        setSplit(pendingSplitKey);
+        pendingSplitKey = null;
+      }
+
+      function setSplit(key) {
+        activeSplitKey = key;
+        const editor = document.getElementById('customSplitEditor');
+        if (key === 'custom') {
+          activeSplit = { days: customSplitDays };
+          editor.style.display = 'block';
+          renderCustomEditor();
+        } else {
+          activeSplit = SPLIT_PRESETS[key] || SPLIT_PRESETS.none;
+          editor.style.display = 'none';
+        }
+        activeDayIndex = 0;
+        const firstDay = activeSplit.days[0].name;
+        workoutEntries.forEach(e => { e.day = firstDay; });
+        renderSplitDays();
+        renderTabs();
+        renderList();
+      }
+
+      function renderCustomEditor() {
+        const list = document.getElementById('customDayList');
+        const addBtn = document.querySelector('#customSplitEditor .btn-add-day');
+        list.innerHTML = '';
+
+        // Column header labels
+        const header = document.createElement('div');
+        header.style.cssText = 'display:flex;gap:7px;align-items:center;padding:0 0 5px;';
+        const spacer = document.createElement('span');
+        spacer.style.cssText = 'width:14px;flex-shrink:0;';
+        const nameLabel = document.createElement('span');
+        nameLabel.className = 'custom-col-label';
+        nameLabel.style.flex = '1';
+        nameLabel.textContent = 'Day Name';
+        const freqLabel = document.createElement('span');
+        freqLabel.className = 'custom-col-label';
+        freqLabel.style.cssText = 'width:58px;flex-shrink:0;text-align:center;';
+        freqLabel.textContent = 'Per cycle';
+        header.appendChild(spacer);
+        header.appendChild(nameLabel);
+        header.appendChild(freqLabel);
+        if (customSplitDays.length > 1) {
+          const delSpacer = document.createElement('span');
+          delSpacer.style.cssText = 'width:24px;flex-shrink:0;';
+          header.appendChild(delSpacer);
+        }
+        list.appendChild(header);
+
+        customSplitDays.forEach(function (d, i) {
+          const row = document.createElement('div');
+          row.className = 'custom-day-row';
+
+          const numSpan = document.createElement('span');
+          numSpan.className = 'custom-day-num';
+          numSpan.textContent = i + 1;
+
+          const nameInp = document.createElement('input');
+          nameInp.type = 'text';
+          nameInp.className = 'custom-day-input';
+          nameInp.value = d.name;
+          nameInp.placeholder = 'e.g. Push';
+          (function (idx) {
+            nameInp.addEventListener('input', function () { renameCustomDay(idx, this.value); });
+          })(i);
+
+          const freqSel = document.createElement('select');
+          freqSel.className = 'custom-day-freq-sel';
+          for (var f = 1; f <= 7; f++) {
+            const opt = document.createElement('option');
+            opt.value = f;
+            opt.textContent = f + '\u00d7';
+            if (f === d.freq) opt.selected = true;
+            freqSel.appendChild(opt);
+          }
+          (function (idx) {
+            freqSel.addEventListener('change', function () { setCustomDayFreq(idx, this.value); });
+          })(i);
+
+          row.appendChild(numSpan);
+          row.appendChild(nameInp);
+          row.appendChild(freqSel);
+
+          if (customSplitDays.length > 1) {
+            const del = document.createElement('button');
+            del.className = 'btn-remove-day';
+            del.textContent = '\u2715';
+            del.title = 'Remove day';
+            (function (idx) {
+              del.addEventListener('click', function () { removeCustomDay(idx); });
+            })(i);
+            row.appendChild(del);
+          }
+
+          list.appendChild(row);
+        });
+
+        if (addBtn) addBtn.disabled = customSplitDays.length >= 7;
+      }
+
+      function addCustomDay() {
+        if (customSplitDays.length >= 7) return;
+        customSplitDays.push({ name: 'Day ' + (customSplitDays.length + 1), freq: 1 });
+        activeSplit = { days: customSplitDays };
+        renderCustomEditor();
+        renderSplitDays();
+        renderTabs();
+      }
+
+      function removeCustomDay(index) {
+        if (customSplitDays.length <= 1) return;
+        const removedName = customSplitDays[index].name;
+        customSplitDays.splice(index, 1);
+        workoutEntries = workoutEntries.filter(e => e.day !== removedName);
+        if (activeDayIndex >= customSplitDays.length) activeDayIndex = customSplitDays.length - 1;
+        activeSplit = { days: customSplitDays };
+        renderCustomEditor();
+        renderSplitDays();
+        renderTabs();
+        renderList();
+        if (document.querySelector('.heatmap-panel').classList.contains('visible')) updateHeatmap();
+      }
+
+      function renameCustomDay(index, newName) {
+        const oldName = customSplitDays[index].name;
+        customSplitDays[index].name = newName;
+        workoutEntries.forEach(e => { if (e.day === oldName) e.day = newName; });
+        activeSplit = { days: customSplitDays };
+        renderSplitDays();
+        renderTabs();
+      }
+
+      function setCustomDayFreq(index, value) {
+        const parsed = parseInt(value, 10);
+        customSplitDays[index].freq = (isNaN(parsed) || parsed < 1) ? 1 : Math.min(parsed, 7);
+        activeSplit = { days: customSplitDays };
+        renderSplitDays();
+        renderTabs();
+        if (document.querySelector('.heatmap-panel').classList.contains('visible')) updateHeatmap();
+      }
+
+      function renderSplitDays() {
+        const container = document.getElementById('splitDays');
+        container.innerHTML = '';
+        activeSplit.days.forEach(d => {
+          const tag = document.createElement('span');
+          tag.className = 'split-day-tag';
+          tag.innerHTML = '<b>' + d.name + '</b> <span style="color:var(--dim)">' + d.freq + '×/cycle</span>';
+          container.appendChild(tag);
+        });
+      }
+
+      function calcAndShow() {
+        updateHeatmap();
+        document.getElementById('heatmapPlaceholder').style.display = 'none';
+        document.querySelector('.heatmap-panel').classList.add('visible');
+      }
+
+      // ── Typeahead ─────────────────────────────────────────────────────────────────
+      function filterExercises() {
+        const query = document.getElementById('inpExercise').value.trim().toLowerCase();
+        const tokens = query.split(/\s+/).filter(Boolean);
+        const dropdown = document.getElementById('exDropdown');
+        dropdown.innerHTML = '';
+        if (!query) { dropdown.classList.remove('open'); return; }
+        let hasResults = false;
+        CATEGORY_ORDER.forEach(cat => {
+          const matches = Object.keys(EXERCISES)
+            .filter(n => {
+              if (EXERCISES[n].cat !== cat) return false;
+              const extras = (CATEGORY_ALIASES[cat] || []).join(' ');
+              const corpus = `${n.toLowerCase()} ${cat.toLowerCase()} ${extras}`;
+              return tokens.every(t => corpus.includes(t));
+            })
+            .sort();
+          if (!matches.length) return;
+          hasResults = true;
+          const gl = document.createElement('span');
+          gl.className = 'ex-dg-label';
+          gl.textContent = cat;
+          dropdown.appendChild(gl);
+          matches.forEach(name => {
+            const item = document.createElement('div');
+            item.className = 'ex-di';
+            item.textContent = name;
+            item.onmousedown = () => selectExercise(name);
+            dropdown.appendChild(item);
+          });
+        });
+        dropdown.classList.toggle('open', hasResults);
+      }
+
+      function selectExercise(name) {
+        selectedExercise = name;
+        document.getElementById('inpExercise').value = name;
+        document.getElementById('exDropdown').classList.remove('open');
+      }
+
+      function exerciseKeyNav(e) {
+        const dropdown = document.getElementById('exDropdown');
+        const items = [...dropdown.querySelectorAll('.ex-di')];
+        const focused = dropdown.querySelector('.ex-di.focused');
+        let idx = items.indexOf(focused);
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          if (idx === -1 && items.length) { items[0].classList.add('focused'); }
+          else if (idx < items.length - 1) { items[idx].classList.remove('focused'); items[idx + 1].classList.add('focused'); }
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          if (idx > 0) { items[idx].classList.remove('focused'); items[idx - 1].classList.add('focused'); }
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          if (focused) selectExercise(focused.textContent);
+          else if (items.length === 1) selectExercise(items[0].textContent);
+        } else if (e.key === 'Escape') {
+          dropdown.classList.remove('open');
+        }
+      }
+
+      // ── Day tabs ──────────────────────────────────────────────────────────────────
+      function renderTabs() {
+        const container = document.getElementById('dayTabs');
+        container.innerHTML = '';
+        if (activeSplit.days.length <= 1) { container.style.display = 'none'; return; }
+        container.style.display = 'flex';
+        activeSplit.days.forEach((d, i) => {
+          const btn = document.createElement('button');
+          btn.className = 'day-tab' + (i === activeDayIndex ? ' active' : '');
+          btn.innerHTML = d.name + (d.freq > 1 ? '<span class="tab-freq">' + d.freq + '\u00d7/cycle</span>' : '');
+          btn.onclick = () => setActiveTab(i);
+          container.appendChild(btn);
+        });
+      }
+
+      function setActiveTab(i) {
+        activeDayIndex = i;
+        editingId = null;
+        renderTabs();
+        renderList();
+      }
+
+      // ── Add / remove exercises ────────────────────────────────────────────────────
+      function addExercise() {
+        const name = selectedExercise || document.getElementById('inpExercise').value.trim();
+        if (!name || !EXERCISES[name]) {
+          const inp = document.getElementById('inpExercise');
+          inp.style.borderColor = '#f87171';
+          setTimeout(() => inp.style.borderColor = '', 1000);
+          return;
+        }
+        const sets = parseInt(document.getElementById('inpSets').value) || 3;
+        const rir = parseInt(document.getElementById('selRIR').value);
+        const load = document.getElementById('selLoad').value;
+        const day = activeSplit.days[activeDayIndex].name;
+        workoutEntries.push({ id: nextId++, name, sets, rir, load, day });
+        selectedExercise = null;
+        document.getElementById('inpExercise').value = '';
+        renderList();
+        if (document.querySelector('.heatmap-panel').classList.contains('visible')) updateHeatmap();
+      }
+
+      function removeExercise(id) {
+        workoutEntries = workoutEntries.filter(e => e.id !== id);
+        renderList();
+        if (document.querySelector('.heatmap-panel').classList.contains('visible')) updateHeatmap();
+      }
+
+      function removeExercise(id) {
+        if (editingId === id) editingId = null;
+        workoutEntries = workoutEntries.filter(e => e.id !== id);
+        renderList();
+        if (document.querySelector('.heatmap-panel').classList.contains('visible')) updateHeatmap();
+      }
+
+      function startEdit(id) {
+        editingId = id;
+        renderList();
+        const setsInput = document.getElementById('edit-sets-' + id);
+        if (setsInput) { setsInput.focus(); setsInput.select(); }
+      }
+
+      function cancelEdit() {
+        editingId = null;
+        renderList();
+      }
+
+      function saveEdit(id) {
+        const entry = workoutEntries.find(e => e.id === id);
+        if (!entry) return;
+        const setsVal = parseInt(document.getElementById('edit-sets-' + id).value);
+        const rirVal = parseInt(document.getElementById('edit-rir-' + id).value);
+        const loadVal = document.getElementById('edit-load-' + id).value;
+        entry.sets = isNaN(setsVal) || setsVal < 1 ? 1 : Math.min(setsVal, 20);
+        entry.rir = rirVal;
+        entry.load = loadVal;
+        editingId = null;
+        renderList();
+        if (document.querySelector('.heatmap-panel').classList.contains('visible')) updateHeatmap();
+      }
+
+      function renderList() {
+        const container = document.getElementById('exList');
+        const emptyMsg = document.getElementById('emptyMsg');
+        const currentDay = activeSplit.days[activeDayIndex]?.name;
+        const dayEntries = workoutEntries.filter(e => e.day === currentDay);
+        if (dayEntries.length === 0) {
+          container.innerHTML = '';
+          container.appendChild(emptyMsg);
+          emptyMsg.style.display = 'block';
+          return;
+        }
+        emptyMsg.style.display = 'none';
+        [...container.querySelectorAll('.ex-item')].forEach(el => el.remove());
+        dayEntries.forEach(e => {
+          const div = document.createElement('div');
+          const isEditing = editingId === e.id;
+          div.className = 'ex-item' + (isEditing ? ' editing' : '');
+          const RIR_LABELS = { 0: 'Failure', 1: '1–2 RIR', 3: '3–4 RIR', 5: '5+ RIR' };
+          const rirLabel = RIR_LABELS[e.rir] ?? '5+ RIR';
+          const loadLabel = { light: 'Light', moderate: 'Moderate', heavy: 'Heavy', very_heavy: 'V.Heavy' }[e.load];
+
+          if (isEditing) {
+            div.innerHTML = `
+              <div class="ex-item-info" style="flex:1;min-width:0">
+                <div class="ex-name">${e.name}</div>
+                <div class="ex-edit-fields">
+                  <div class="ex-edit-field">
+                    <label>Sets</label>
+                    <input type="number" id="edit-sets-${e.id}" value="${e.sets}" min="1" max="20">
+                  </div>
+                  <div class="ex-edit-field">
+                    <label>RIR</label>
+                    <select id="edit-rir-${e.id}">
+                      <option value="0" ${e.rir === 0 ? 'selected' : ''}>0 RIR</option>
+                      <option value="1" ${e.rir === 1 ? 'selected' : ''}>1–2 RIR</option>
+                      <option value="3" ${e.rir === 3 ? 'selected' : ''}>3–4 RIR</option>
+                      <option value="5" ${e.rir >= 5 ? 'selected' : ''}>5+ RIR</option>
+                    </select>
+                  </div>
+                  <div class="ex-edit-field">
+                    <label>Load</label>
+                    <select id="edit-load-${e.id}">
+                      <option value="light" ${e.load === 'light' ? 'selected' : ''}>Light</option>
+                      <option value="moderate" ${e.load === 'moderate' ? 'selected' : ''}>Moderate</option>
+                      <option value="heavy" ${e.load === 'heavy' ? 'selected' : ''}>Heavy</option>
+                      <option value="very_heavy" ${e.load === 'very_heavy' ? 'selected' : ''}>V.Heavy</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="ex-edit-actions">
+                  <button class="btn-save" onclick="saveEdit(${e.id})">Save</button>
+                  <button class="btn-cancel-edit" onclick="cancelEdit()">Cancel</button>
+                </div>
+              </div>
+              <button class="btn-del" onclick="event.stopPropagation();removeExercise(${e.id})">✕</button>
+            `;
+            div.addEventListener('keydown', ev => {
+              if (ev.key === 'Enter' && ev.target.tagName !== 'BUTTON') { ev.preventDefault(); saveEdit(e.id); }
+              if (ev.key === 'Escape') { ev.preventDefault(); cancelEdit(); }
+            });
+          } else {
+            div.innerHTML = `
+              <div class="ex-item-info">
+                <div class="ex-name">${e.name}</div>
+                <div class="ex-meta">${e.sets} sets · ${rirLabel} · ${loadLabel}</div>
+              </div>
+              <span class="ex-edit-hint">edit</span>
+              <button class="btn-del" onclick="event.stopPropagation();removeExercise(${e.id})">✕</button>
+            `;
+            div.addEventListener('click', () => startEdit(e.id));
+          }
+          container.appendChild(div);
+        });
+      }
+
+      // ── Heatmap Computation ───────────────────────────────────────────────────────────────
+      function computeHeatmap() {
+        const raw = {};
+        Object.keys(MUSCLE_TARGETS).forEach(m => raw[m] = 0);
+
+        const dayFreq = {};
+        activeSplit.days.forEach(d => { dayFreq[d.name] = d.freq; });
+        workoutEntries.forEach(entry => {
+          const ex = EXERCISES[entry.name];
+          if (!ex) return;
+          const rirMod = RIR_MOD[entry.rir] ?? 0.5;
+          const loadMod = LOAD_MOD[entry.load] ?? 1.0;
+          const freq = dayFreq[entry.day] ?? 1;
+          const mult = entry.sets * rirMod * loadMod * freq;
+          Object.entries(ex.m).forEach(([mid, coeff]) => {
+            if (raw[mid] !== undefined) raw[mid] += mult * coeff;
+          });
+        });
+
+        // ← baseline goes HERE, after accumulation, before normalization
+        Object.entries(DAILY_ACTIVITY_BASELINE).forEach(([mid, val]) => {
+          if (raw[mid] !== undefined) raw[mid] += val;
+        });
+
+        const weighted = {};
+        Object.keys(MUSCLE_TARGETS).forEach(m => {
+          weighted[m] = raw[m] / MUSCLE_TARGETS[m];
+        });
+
+        const vals = Object.values(weighted);
+        const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+
+        const relative = {};
+        Object.keys(MUSCLE_TARGETS).forEach(m => {
+          relative[m] = mean > 0 ? weighted[m] / mean : 0;
+        });
+
+        return { raw, relative };
+      }
+
+      // ── Color mapping ─────────────────────────────────────────────────────────────
+      function lerp(a, b, t) { return a + (b - a) * Math.max(0, Math.min(1, t)); }
+      function lerpColor(c1, c2, t) {
+        return [
+          lerp(c1[0], c2[0], t),
+          lerp(c1[1], c2[1], t),
+          lerp(c1[2], c2[2], t),
+        ];
+      }
+
+      const STOPS = [
+        [0.00, [21, 101, 192]],   // deep blue
+        [0.40, [66, 165, 245]],   // light blue
+        [0.75, [38, 166, 154]],   // teal (slightly under balanced)
+        [1.00, [102, 187, 106]],   // green (balanced)
+        [1.50, [255, 167, 38]],   // amber
+        [2.50, [239, 83, 80]],   // red
+      ];
+
+      function scoreToColor(score, noStim) {
+        if (noStim) return 'rgba(255,255,255,0.06)';
+        // clamp
+        const s = Math.max(0, score);
+        let i = 0;
+        while (i < STOPS.length - 2 && STOPS[i + 1][0] <= s) i++;
+        const [s0, c0] = STOPS[i];
+        const [s1, c1] = STOPS[Math.min(i + 1, STOPS.length - 1)];
+        const t = s1 > s0 ? (s - s0) / (s1 - s0) : 1;
+        const [r, g, b] = lerpColor(c0, c1, t);
+        return `rgb(${Math.round(r)},${Math.round(g)},${Math.round(b)})`;
+      }
+
+      function scoreLabel(score) {
+        if (score === 0) return 'Not trained';
+        if (score < 0.5) return 'Very under';
+        if (score < 0.8) return 'Under';
+        if (score < 1.2) return 'Balanced';
+        if (score < 1.7) return 'Over';
+        return 'Very over';
+      }
+
+      // ── Overall Balance Score ─────────────────────────────────────────────────────
+
+      const BALANCE_SECONDARY = new Set([
+        'spinal_erectors', 'serratus_anterior', 'posterior_rotator_cuff',
+        'hip_flexors', 'hip_adductors',
+        'wrist_flexors', 'wrist_extensors', 'tibialis_anterior'
+      ]);
+      const BALANCE_NEUTRAL_LOW = 0.8;
+      const BALANCE_NEUTRAL_HIGH = 1.2;
+      const BALANCE_PENALTY_EXP = 1.5;
+      const BALANCE_SECONDARY_WT = 0.3;  // secondary muscles counted at 30% of their MAV
+
+      function computeOverallBalance(relative, raw) {
+        if (!workoutEntries.length) return null;
+
+        let totalWeight = 0, weightedPenalty = 0;
+        let nBalanced = 0, nUnder = 0, nOver = 0, nUntrained = 0;
+
+        Object.keys(MUSCLE_TARGETS).forEach(mid => {
+          const mav = MUSCLE_TARGETS[mid];
+          const weight = BALANCE_SECONDARY.has(mid) ? mav * BALANCE_SECONDARY_WT : mav;
+          const s = relative[mid] ?? 0;
+
+          let penalty;
+          if (raw[mid] === 0) {
+            penalty = 1.0;
+            nUntrained++;
+          } else if (s >= BALANCE_NEUTRAL_LOW && s <= BALANCE_NEUTRAL_HIGH) {
+            penalty = 0;
+            nBalanced++;
+          } else if (s < BALANCE_NEUTRAL_LOW) {
+            penalty = Math.pow((BALANCE_NEUTRAL_LOW - s) / BALANCE_NEUTRAL_LOW, BALANCE_PENALTY_EXP);
+            nUnder++;
+          } else {
+            // overtrained ceiling at score 2.5 → penalty 1.0
+            penalty = Math.min(1, Math.pow((s - BALANCE_NEUTRAL_HIGH) / (2.5 - BALANCE_NEUTRAL_HIGH), BALANCE_PENALTY_EXP));
+            nOver++;
+          }
+
+          totalWeight += weight;
+          weightedPenalty += weight * penalty;
+        });
+
+        const score = Math.max(0, Math.min(100, Math.round(100 * (1 - weightedPenalty / totalWeight))));
+        return { score, nBalanced, nUnder, nOver, nUntrained };
+      }
+
+      function balanceScoreGrade(score) {
+        if (score >= 90) return { label: 'Excellent', color: '#66bb6a' };
+        if (score >= 75) return { label: 'Good', color: '#26a69a' };
+        if (score >= 60) return { label: 'Fair', color: '#ffa726' };
+        if (score >= 45) return { label: 'Needs Work', color: '#ff7043' };
+        return { label: 'Poor', color: '#ef5350' };
+      }
+
+      // ── Update Overall Score  ─────────────────────────────────────────────────────────────
+      function updateOverallScore(relative, raw) {
+        const result = computeOverallBalance(relative, raw);
+        const numEl = document.getElementById('overallScoreNum');
+        const gradeEl = document.getElementById('overallScoreGrade');
+        const pillsEl = document.getElementById('scorePills');
+        const ringEl = document.getElementById('overallScoreRing');
+
+        if (!result) {
+          numEl.textContent = '—';
+          numEl.style.color = '';
+          gradeEl.textContent = '';
+          pillsEl.innerHTML = '<span style="font-size:11px;color:var(--dim);font-style:italic">Add exercises to see your balance score</span>';
+          if (ringEl) ringEl.style.background = `conic-gradient(var(--border) 0%, var(--border) 100%)`;
+          return;
+        }
+
+        const { score, nBalanced, nUnder, nOver, nUntrained } = result;
+        const { label, color } = balanceScoreGrade(score);
+
+        numEl.textContent = score;
+        numEl.style.color = color;
+        gradeEl.textContent = label;
+        gradeEl.style.color = color;
+
+        // Conic ring: fill arc proportional to score
+        if (ringEl) {
+          ringEl.style.background =
+            `conic-gradient(${color} 0% ${score}%, var(--s3) ${score}% 100%)`;
+        }
+
+        const pills = [];
+        if (nBalanced) pills.push(`<span class="spill spill-balanced">${nBalanced} balanced</span>`);
+        if (nUnder) pills.push(`<span class="spill spill-under">${nUnder} under</span>`);
+        if (nOver) pills.push(`<span class="spill spill-over">${nOver} over</span>`);
+        if (nUntrained) pills.push(`<span class="spill spill-none">${nUntrained} not trained</span>`);
+        pillsEl.innerHTML = pills.join('');
+      }
+
+      // ── Update heatmap + table  ────────────────────────────────────────────────────
+      function updateHeatmap() {
+        const { raw, relative } = computeHeatmap();
+        const hasAny = workoutEntries.length > 0;
+
+        // Color SVG paths
+        Object.keys(MUSCLE_TARGETS).forEach(mid => {
+          const el = document.getElementById(mid);
+          if (!el) return;
+          const noStim = !hasAny;
+          const color = noStim ? 'rgba(255,255,255,0.06)' : scoreToColor(relative[mid], raw[mid] === 0 && hasAny);
+          // For 0-stim muscles when we have a workout: show dim blue
+          const finalColor = (hasAny && raw[mid] === 0) ? 'rgb(21,65,130)' : (noStim ? 'rgba(255,255,255,0.06)' : scoreToColor(relative[mid]));
+          el.setAttribute('fill', finalColor);
+          el.dataset.score = relative[mid].toFixed(2);
+          el.dataset.raw = raw[mid].toFixed(2);
+        });
+
+        // Update table
+        const tbody = document.getElementById('scoreBody');
+        tbody.innerHTML = '';
+        const muscles = Object.keys(MUSCLE_TARGETS);
+        // Sort: highest score first
+        muscles.sort((a, b) => (relative[b] || 0) - (relative[a] || 0));
+        muscles.forEach(mid => {
+          const score = relative[mid];
+          const rawVal = raw[mid];
+          const noStim = rawVal === 0;
+          const color = hasAny ? scoreToColor(noStim ? 0 : score) : '#555';
+          const barW = hasAny ? Math.min(100, (score / 2.5) * 100) : 0;
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+      <td>${MUSCLE_DISPLAY[mid] || mid}</td>
+      <td style="color:var(--dim);font-size:11px">${ISRAETEL_GROUP[mid] || ''}</td>
+      <td class="bar-cell">
+        <span class="mini-bar"><span class="mini-fill" style="width:${barW}%;background:${color}"></span></span>
+        <span class="score-num" style="color:${color}">${hasAny ? (noStim ? '<span class="no-stim">—</span>' : score.toFixed(2)) : '—'}</span>
+      </td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--dim)">
+        ${hasAny && rawVal > 0 ? rawVal.toFixed(1) : '—'}
+      </td>
+    `;
+          tbody.appendChild(tr);
+        });
+        updateOverallScore(relative, raw);
+      }
+
+      // ── Tooltip ───────────────────────────────────────────────────────────────────
+      function getTopContributors(mid, topN = 2) {
+        const dayFreq = {};
+        activeSplit.days.forEach(d => { dayFreq[d.name] = d.freq; });
+        const contribs = [];
+        workoutEntries.forEach(entry => {
+          const ex = EXERCISES[entry.name];
+          if (!ex || ex.m[mid] === undefined) return;
+          const rirMod = RIR_MOD[entry.rir] ?? 0.5;
+          const loadMod = LOAD_MOD[entry.load] ?? 1.0;
+          const freq = dayFreq[entry.day] ?? 1;
+          const val = entry.sets * rirMod * loadMod * freq * ex.m[mid];
+          contribs.push({ name: entry.name, val });
+        });
+        contribs.sort((a, b) => b.val - a.val);
+        return contribs;
+      }
+
+      const tooltip = document.getElementById('tooltip');
+      document.addEventListener('mousemove', e => {
+        const path = e.target.closest('.muscle-path');
+        if (!path) { tooltip.style.display = 'none'; return; }
+        const mid = path.dataset.muscle;
+        const score = parseFloat(path.dataset.score) || 0;
+        const raw = parseFloat(path.dataset.raw) || 0;
+        const hasAny = workoutEntries.length > 0;
+
+        document.getElementById('ttName').textContent = MUSCLE_DISPLAY[mid] || mid;
+        document.getElementById('ttScore').textContent =
+          hasAny
+            ? (raw === 0 ? 'No stimulus' : `Score: ${score.toFixed(2)} · Raw: ${raw.toFixed(1)}`)
+            : 'Add exercises to see scores';
+        document.getElementById('ttHint').textContent = hasAny && raw > 0 ? scoreLabel(score) : '';
+        document.getElementById('ttHint').style.color = hasAny && raw > 0 ? scoreToColor(score) : 'var(--dim)';
+
+        const contribWrap = document.getElementById('ttContribWrap');
+        const contribDiv = document.getElementById('ttContribs');
+        if (hasAny && raw > 0) {
+          const all = getTopContributors(mid);
+          const top = all.slice(0, 2);
+          const more = all.length - 2;
+          const max = top[0]?.val || 1;
+          contribDiv.innerHTML = '';
+          top.forEach(c => {
+            const pct = Math.round((c.val / max) * 100);
+            const row = document.createElement('div');
+            row.className = 'tt-contrib-row';
+            row.innerHTML = `
+        <span class="tt-contrib-name" title="${c.name}">${c.name}</span>
+        <span class="tt-contrib-bar-wrap"><span class="tt-contrib-bar-fill" style="width:${pct}%"></span></span>
+        <span class="tt-contrib-val">${c.val.toFixed(1)}</span>
+      `;
+            contribDiv.appendChild(row);
+          });
+          if (more > 0) {
+            const m = document.createElement('div');
+            m.className = 'tt-contrib-more';
+            m.textContent = `and ${more} more…`;
+            contribDiv.appendChild(m);
+          }
+          contribWrap.style.display = '';
+        } else {
+          contribWrap.style.display = 'none';
+        }
+
+        tooltip.style.display = 'block';
+        tooltip.style.left = (e.clientX + 14) + 'px';
+        tooltip.style.top = (e.clientY - 14) + 'px';
+      });
+
+      // Keep tooltip from going off-screen
+      document.addEventListener('mousemove', e => {
+        const tt = tooltip;
+        if (tt.style.display === 'none') return;
+        const r = tt.getBoundingClientRect();
+        if (r.right > window.innerWidth - 8)
+          tt.style.left = (e.clientX - r.width - 14) + 'px';
+        if (r.bottom > window.innerHeight - 8)
+          tt.style.top = (e.clientY - r.height - 14) + 'px';
+      });
+
+      // ── Init ──────────────────────────────────────────────────────────────────────
+      renderList();
+      renderSplitDays();
+      renderTabs();
+    </script>
+</body>
+
+</html>

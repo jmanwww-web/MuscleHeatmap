@@ -1,0 +1,76 @@
+1. Martin-Fuentes et al. (2020) – “Evaluation of the Lower Limb Muscles’ Electromyographic Activity during the Leg Press Exercise and Its Variants: A Systematic Review”
+
+2. Looney et al. (2016) – “Electromyographical and Perceptual Responses to Different Resistance Intensities in a Squat Protocol: Does Performing Sets to Failure With Light Loads Produce the Same Activity?”
+
+3. Stien et al. (2021) – “Electromyographic Comparison of Five Lower-Limb Muscles between Single- and Multi-Joint Exercises among Trained Men”
+
+4. Leal de Souza et al. (2017) – “Is Myoelectric Activity Distributed Equally within the Rectus Femoris Muscle During Loaded, Squat Exercises?”
+
+5. Aygün-Polat et al. (2025) – “Targeted Muscle Activation in Bulgarian Split Squat Variations: Effects of Trunk Position and Suspension-Based Execution”
+
+6. Llurda-Almuzara et al. (2021) – “Biceps Femoris Activation during Hamstring Strength Exercises: A Systematic Review”
+
+7. Kennedy et al. (2022) – “Electromyographic Differences of the Gluteus Maximus, Gluteus Medius, Biceps Femoris, and Vastus Lateralis between the Barbell Hip Thrust and Barbell Glute Bridge”
+
+8. Ebben (2009) – “Hamstring Activation during Lower Body Resistance Training Exercises”
+Jakobsen et al. (2026) – “Neuromuscular Fatigue during Heavy Resistance Drop Set Training to Failure”
+
+9. Jakobsen et al. (2026) – “Neuromuscular Fatigue during Heavy Resistance Drop Set Training to Failure”
+
+10. Contreras et al. (2016) – “Comparison of Gluteus Maximus, Biceps Femoris, and Vastus Lateralis EMG Amplitude in Front, Full, and Parallel Squat Variations”
+
+11. Andersen, V., Fimland, M.S., Mo, D-A., Iversen, V.M., Vederhus, T., Hellebø, L.R., Nordaune, K.I., & Saeterbakken, A.H. (2018) – "Electromyographic Comparison of Barbell Deadlift, Hex Bar Deadlift, and Hip Thrust Exercises: A Cross-Over Study." Journal of Strength and Conditioning Research.
+
+12. McAllister, M.J., Hammond, K.G., Schilling, B.K., Ferreria, L.C., Reed, J.P., & Weiss, L.W. (2014) – "Muscle Activation During Various Hamstring Exercises." Journal of Strength and Conditioning Research.
+
+13. Fauth, M.L., Garceau, L.R., Lutsch, B., Gray, A., Szalkowski, C., Wurm, B., & Ebben, W.P. (2010) – "Hamstrings, Quadriceps, and Gluteal Muscle Activation During Resistance Training Exercises." Proceedings of the 28th International Symposium of Biomechanics in Sports.
+
+14. Coratella, G., Tornatore, G., Longo, S., Esposito, F., & Cè, E. (2021) – "The Activation of Gluteal, Thigh, and Lower Back Muscles in Different Squat Variations Performed by Competitive Bodybuilders: Implications for Resistance Training." International Journal of Environmental Research and Public Health.
+
+15. Lee, S., Schultz, J., Timgren, J., Staelgraeve, K., Miller, M., & Liu, Y. (2018) – "An Electromyographic and Kinetic Comparison of Conventional and Romanian Deadlifts." Journal of Exercise Science and Fitness.
+
+16. Coratella, G., Tornatore, G., Bertinato, L., Longo, S., Esposito, F., & Cè, E. (2022) – "An Electromyographic Analysis of Romanian, Step-Romanian, and Stiff-Leg Deadlift: Implication for Resistance Training." Applied Sciences.
+
+17. Delgado, Drinkwater, Banyard, Haff & Nosaka (2019) – "Comparison Between Back Squat, Romanian Deadlift, and Barbell Hip Thrust for Leg and Hip Muscle Activities During Hip Extension." Journal of Strength and Conditioning Research.
+
+18. Camara, Coburn, Dunnick et al. (2016) – "An Examination of Muscle Activation and Power Characteristics While Performing the Deadlift Exercise with Straight and Hexagonal Barbells." Journal of Strength and Conditioning Research.
+
+19. Bourne, Williams, Opar, Al Najjar, Kerr & Shield (2017) – "Impact of Exercise Selection on Hamstring Muscle Activation." British Journal of Sports Medicine.
+
+20. Leal Andrín, López-Vivancos & Colado (2020) – "Electromyographic Activity in the Gluteus Medius, Gluteus Maximus, Biceps Femoris, Vastus Lateralis, Vastus Medialis and Rectus Femoris During the Monopodal Squat, Forward Lunge and Lateral Step-Up Exercises."
+
+
+
+
+
+Brief summaries (search and read abstract and onward for more info):
+1. Leg press produced greatest quadriceps activation of any variant, specifically vastus lateralis/medialis by EMG, followed closely by rectus femoris. Hamstrings and gastrocnemius became more active only near full knee extension. Changes in technique/foot placement had small/inconsistent effects on activation patterns.
+2. Sets of squats to failure produced highest overall EMG when closer to the 1 rep max (1RM), indicating that weight is more impactful to relative activation of affected muscles than reps even when all sets are taken to failure.
+3. Leg press outperforms knee extensions by a clear margin for the vastus lateralis, while the opposite is true for the rectus femoris. Single leg hip extension (kickback) produced much higher biceps femoris activation than leg press. No significant difference for gluteus maximus or vastus medialis between leg press and knee extension.
+4. Regional variation may occur under certain conditions leading to different adaptations along length of the rectus femoris during squats.
+5. Bulgarian split squat varies by relative activation of different muscle groups, i.e. posterior chain and all leg muscles, based on angle of trunk flexion and stability. For purposes of heat map, this may mean that the relative work done by each muscle group should be very slightly tweaked toward more even than is typically expected.
+6. Nordic hamstring curls and isokinetic hamstring exercises elicited the highest biceps femoris activation of a great number of considered exercises, spanning 29 studies and 500+ subjects. These types of exercises along with other isolations such as leg curls are markedly more effective for targeting hamstrings than multi-joint or hip-dominant motions.
+7. Barbell hip thrust produced significantly greater vastus lateralis EMG than barbell glute bridge, though the glute bridge produced significantly greater gluteus maximus activity (upper and lower fibers) as well as higher mean gluteus medius activation compared to the thrust. Overall, BHT performed better for quads and BGB performed better for glutes.
+8. Across six exercises comparing hamstring and quadricep activation, the Russian curl (Nordic variant) and seated leg curl performed best for biceps femoris (98% MVIC and 81% MVIC). Traditional hip-dominant movements such as stiff-leg deadlifts and good mornings produced slightly under 50% MVIC. Back squats achieved only 27% MVIC for biceps femoris, but 74% (the highest) for the rectus femoris. Hamstring exercises produced very low quadricep EMG levels. 
+9. Basic information about muscle EMG rising as failure is approached in training.
+10. In a comparison of front and parallel squat variations at equivalent relative loads, no variation produced any statistically meaningful differences for muscles of the glutes and hamstrings. Only vastus lateralis showed a slight increase in EMG in full/front squats.
+11. Compared barbell deadlift, hex bar deadlift, and barbell hip thrust, measuring EMG for gluteus maximus, biceps femoris, and erector spinae (through concentric phase). Hip thrust induced the greatest glute activation, while barbell deadlift produced the most significant biceps femoris activation. No difference in erector spinae activation was noted amongst the three exercises.
+12. Compared activation of erector spinae, gluteus medius, semitendinosus, biceps femoris, and medial gastrocnemius in leg curls, good mornings, glute-ham raises, and RDLs. semitendinosus was significantly more active than biceps femoris across all of these exercises. Hamstring activity was maximized in RDL and glute-ham raises. Surprisingly, leg curl ranked lower than RDL for overall hamstring activation in this study (12 participants).
+13. Measured EMG of lateral and medial hamstrings, rectus femoris, vastus lateralis and medialis, gluteus maximus and medius during back squats, deadlifts, forward lunges, and step-ups. Deadlift was strongest activated of medial and lateral hamstrings, squat greatest in rectus femoris. step-ups and lunges were most effective at activating both the gluteus maximus and gluteus medius.
+14. Comparison of squat types - full back, parallel back, front, sumo back, externally rotated sumo back - for activation of gluteus maximus and medius, adductor longus, rectus femoris, and vaster lateralis and medialis. Sumo variations shifted emphasis considerably toward adductors, while front squats were marginally more quad dominant. Some notable differences in gluteus activation across variations.
+15. Comparison of conventional deadlift to RDLs. Conventional elicited significantly greater recruitment of rectus femoris and gluteus maximus.
+16. RDLs produced greater semitendinosus activation than stiff-leg deadlift, while step-RDLs produced greater glute and semitendinosus activation than either.
+17. Compared activation of vastus lateralis, biceps femoris, and gluteus maximus across back squat, RDLs, and barbell hip thrust. BHT produced significantly greater glute activity than squat but not compared to RDLs. Squat outperformed the others greatly in vastus lateralis activation. No difference was observed in activation of biceps femoris, contrary to usual conclusions. 
+18. Hex bar outperformed straight bar for activation of vastus lateralis in deadlifts. Conventional deadlift, though, was by far superior for biceps femoris and erector spinae activation. Difference in movement was found to be purely mechanical - no difference in 1RM.
+19. Compared ratio of biceps femoris to medial hamstring EMG during both phases of 10 common exercises. Relatively higher levels of biceps femoris long-head and semimembranosus activity were observed during hip-extension oriented movements, while knee-flexion oriented movements preferred semitendinosus and biceps femoris short-head.
+20. Single-legged squats produce a far more intense and balanced distribution of EMG across the leg than lunges or step-ups. 
+
+
+
+
+
+
+
+
+
+
