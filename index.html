@@ -2036,6 +2036,7 @@
         updateHeatmap();
         document.getElementById('heatmapPlaceholder').style.display = 'none';
         document.querySelector('.heatmap-panel').classList.add('visible');
+        if (window.innerWidth <= 768) setMobileView('results');
       }
 
       // ── Typeahead ─────────────────────────────────────────────────────────────────
@@ -2259,99 +2260,24 @@
         });
       }
 
-      const _calcAndShowOrig = calcAndShow;
-      calcAndShow = function () {
-        _calcAndShowOrig();
-        if (window.innerWidth <= 768) setMobileView('results');
-      };
-
-      (function () {
-        const tt = document.getElementById('tooltip');
-        let activePath = null;
-
-        function showTooltipForPath(path, x, y) {
-          if (!path) return;
-          const mid = path.dataset.muscle;
-          const score = parseFloat(path.dataset.score) || 0;
-          const raw = parseFloat(path.dataset.raw) || 0;
-          const hasAny = workoutEntries.length > 0;
-
-          document.getElementById('ttName').textContent = MUSCLE_DISPLAY[mid] || mid;
-          document.getElementById('ttScore').textContent =
-            hasAny
-              ? (raw === 0 ? 'No stimulus' : `Score: ${score.toFixed(2)} · Raw: ${raw.toFixed(1)}`)
-              : 'Add exercises to see scores';
-          const hintEl = document.getElementById('ttHint');
-          hintEl.textContent = hasAny && raw > 0 ? scoreLabel(score) : '';
-          hintEl.style.color = hasAny && raw > 0 ? scoreToColor(score) : 'var(--dim)';
-
-          const contribWrap = document.getElementById('ttContribWrap');
-          const contribDiv = document.getElementById('ttContribs');
-          if (hasAny && raw > 0) {
-            const all = getTopContributors(mid);
-            const top = all.slice(0, 2);
-            const more = all.length - 2;
-            const max = top[0]?.val || 1;
-            contribDiv.innerHTML = '';
-            top.forEach(c => {
-              const pct = Math.round((c.val / max) * 100);
-              const row = document.createElement('div');
-              row.className = 'tt-contrib-row';
-              row.innerHTML = `
-          <span class="tt-contrib-name" title="${c.name}">${c.name}</span>
-          <span class="tt-contrib-bar-wrap"><span class="tt-contrib-bar-fill" style="width:${pct}%"></span></span>
-          <span class="tt-contrib-val">${c.val.toFixed(1)}</span>
-        `;
-              contribDiv.appendChild(row);
-            });
-            if (more > 0) {
-              const m = document.createElement('div');
-              m.className = 'tt-contrib-more';
-              m.textContent = `and ${more} more…`;
-              contribDiv.appendChild(m);
-            }
-            contribWrap.style.display = '';
-          } else {
-            contribWrap.style.display = 'none';
-          }
-
-          tt.style.display = 'block';
-          const ttW = tt.offsetWidth || 180;
-          const ttH = tt.offsetHeight || 100;
-          const vv = window.visualViewport;
-          const vpLeft = vv ? vv.offsetLeft : 0;
-          const vpTop = vv ? vv.offsetTop : 0;
-          const vpW = vv ? vv.width : window.innerWidth;
-          const vpH = vv ? vv.height : window.innerHeight;
-          let left = x + vpLeft + 14;
-          let top = y + vpTop - 14;
-          if (left + ttW > vpLeft + vpW - 8) left = x + vpLeft - ttW - 14;
-          if (top + ttH > vpTop + vpH - 64) top = y + vpTop - ttH - 14;
-          tt.style.left = left + 'px';
-          tt.style.top = top + 'px';
+      document.addEventListener('touchstart', function (e) {
+        if (window.innerWidth > 768) return;
+        const path = e.target.closest('.muscle-path');
+        if (!path) {
+          tooltip.style.display = 'none';
+          activeTouchPath = null;
+          return;
         }
-
-        document.addEventListener('touchstart', function (e) {
-          if (window.innerWidth > 768) return;
-          const path = e.target.closest('.muscle-path');
-          if (!path) {
-            if (tt.style.display !== 'none') {
-              tt.style.display = 'none';
-              activePath = null;
-            }
-            return;
-          }
-          e.preventDefault();
-          const touch = e.changedTouches[0];
-          if (activePath === path) {
-            tt.style.display = 'none';
-            activePath = null;
-          } else {
-            activePath = path;
-            showTooltipForPath(path, touch.clientX, touch.clientY);
-          }
-        }, { passive: false });
-      })();
+        e.preventDefault();
+        const touch = e.changedTouches[0];
+        if (activeTouchPath === path) {
+          tooltip.style.display = 'none';
+          activeTouchPath = null;
+        } else {
+          activeTouchPath = path;
+          showTooltipForPath(path, touch.clientX, touch.clientY);
+        }
+      }, { passive: false });
 
       // ── Heatmap Computation ───────────────────────────────────────────────────────────────
       function computeHeatmap() {
@@ -2576,7 +2502,7 @@
       }
 
       // ── Tooltip ───────────────────────────────────────────────────────────────────
-      function getTopContributors(mid, topN = 2) {
+      function getTopContributors(mid) {
         const dayFreq = {};
         activeSplit.days.forEach(d => { dayFreq[d.name] = d.freq; });
         const contribs = [];
@@ -2594,9 +2520,9 @@
       }
 
       const tooltip = document.getElementById('tooltip');
-      document.addEventListener('mousemove', e => {
-        const path = e.target.closest('.muscle-path');
-        if (!path) { tooltip.style.display = 'none'; return; }
+      let activeTouchPath = null;
+
+      function showTooltipForPath(path, x, y) {
         const mid = path.dataset.muscle;
         const score = parseFloat(path.dataset.score) || 0;
         const raw = parseFloat(path.dataset.raw) || 0;
@@ -2607,8 +2533,9 @@
           hasAny
             ? (raw === 0 ? 'No stimulus' : `Score: ${score.toFixed(2)} · Raw: ${raw.toFixed(1)}`)
             : 'Add exercises to see scores';
-        document.getElementById('ttHint').textContent = hasAny && raw > 0 ? scoreLabel(score) : '';
-        document.getElementById('ttHint').style.color = hasAny && raw > 0 ? scoreToColor(score) : 'var(--dim)';
+        const hintEl = document.getElementById('ttHint');
+        hintEl.textContent = hasAny && raw > 0 ? scoreLabel(score) : '';
+        hintEl.style.color = hasAny && raw > 0 ? scoreToColor(score) : 'var(--dim)';
 
         const contribWrap = document.getElementById('ttContribWrap');
         const contribDiv = document.getElementById('ttContribs');
@@ -2623,10 +2550,10 @@
             const row = document.createElement('div');
             row.className = 'tt-contrib-row';
             row.innerHTML = `
-        <span class="tt-contrib-name" title="${c.name}">${c.name}</span>
-        <span class="tt-contrib-bar-wrap"><span class="tt-contrib-bar-fill" style="width:${pct}%"></span></span>
-        <span class="tt-contrib-val">${c.val.toFixed(1)}</span>
-      `;
+              <span class="tt-contrib-name" title="${c.name}">${c.name}</span>
+              <span class="tt-contrib-bar-wrap"><span class="tt-contrib-bar-fill" style="width:${pct}%"></span></span>
+              <span class="tt-contrib-val">${c.val.toFixed(1)}</span>
+            `;
             contribDiv.appendChild(row);
           });
           if (more > 0) {
@@ -2641,20 +2568,48 @@
         }
 
         tooltip.style.display = 'block';
-        tooltip.style.left = (e.clientX + 14) + 'px';
-        tooltip.style.top = (e.clientY - 14) + 'px';
+        const ttW = tooltip.offsetWidth || 180;
+        const ttH = tooltip.offsetHeight || 100;
+        const vv = window.visualViewport;
+        const vpLeft = vv ? vv.offsetLeft : 0;
+        const vpTop = vv ? vv.offsetTop : 0;
+        const vpW = vv ? vv.width : window.innerWidth;
+        const vpH = vv ? vv.height : window.innerHeight;
+        let left = x + vpLeft + 14;
+        let top = y + vpTop - 14;
+        if (left + ttW > vpLeft + vpW - 8) left = x + vpLeft - ttW - 14;
+        if (top + ttH > vpTop + vpH - 64) top = y + vpTop - ttH - 14;
+        tooltip.style.left = left + 'px';
+        tooltip.style.top = top + 'px';
+      }
+
+      // Desktop: hover
+      document.addEventListener('mousemove', e => {
+        if (window.innerWidth <= 768) return;
+        const path = e.target.closest('.muscle-path');
+        if (!path) { tooltip.style.display = 'none'; return; }
+        showTooltipForPath(path, e.clientX, e.clientY);
       });
 
-      // Keep tooltip from going off-screen
-      document.addEventListener('mousemove', e => {
-        const tt = tooltip;
-        if (tt.style.display === 'none') return;
-        const r = tt.getBoundingClientRect();
-        if (r.right > window.innerWidth - 8)
-          tt.style.left = (e.clientX - r.width - 14) + 'px';
-        if (r.bottom > window.innerHeight - 8)
-          tt.style.top = (e.clientY - r.height - 14) + 'px';
-      });
+      // Mobile: tap to toggle
+      document.addEventListener('touchstart', function (e) {
+        if (window.innerWidth > 768) return;
+        const path = e.target.closest('.muscle-path');
+        if (!path) {
+          tooltip.style.display = 'none';
+          activeTouchPath = null;
+          return;
+        }
+        e.preventDefault();
+        const touch = e.changedTouches[0];
+        if (activeTouchPath === path) {
+          tooltip.style.display = 'none';
+          activeTouchPath = null;
+        } else {
+          activeTouchPath = path;
+          showTooltipForPath(path, touch.clientX, touch.clientY);
+        }
+      }, { passive: false });
 
       // ── Init ──────────────────────────────────────────────────────────────────────
       renderList();
