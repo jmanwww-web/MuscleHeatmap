@@ -1422,6 +1422,11 @@
         margin: 8px 0;
       }
 
+      .ex-edit-field input,
+      .ex-edit-field select {
+        font-size: 16px;
+      }
+
       /* Touch tooltip — shown on tap, not hover */
       .tt {
         max-width: calc(100vw - 24px);
@@ -2163,8 +2168,10 @@
       function startEdit(id) {
         editingId = id;
         renderList();
-        const setsInput = document.getElementById('edit-sets-' + id);
-        if (setsInput) { setsInput.focus(); setsInput.select(); }
+        if (window.innerWidth > 768) {
+          const setsInput = document.getElementById('edit-sets-' + id);
+          if (setsInput) { setsInput.focus(); setsInput.select(); }
+        }
       }
 
       function cancelEdit() {
