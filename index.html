@@ -1241,17 +1241,6 @@
       margin-top: 2px;
     }
 
-    .tt-score {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      color: var(--dim);
-    }
-
-    .tt-hint {
-      font-size: 11px;
-      margin-top: 4px;
-    }
-
     /* ── Mobile bottom nav ──────────────────────────────────────── */
     .mobile-nav {
       display: none;
@@ -2148,12 +2137,6 @@
         workoutEntries.push({ id: nextId++, name, sets, rir, load, day });
         selectedExercise = null;
         document.getElementById('inpExercise').value = '';
-        renderList();
-        if (document.querySelector('.heatmap-panel').classList.contains('visible')) updateHeatmap();
-      }
-
-      function removeExercise(id) {
-        workoutEntries = workoutEntries.filter(e => e.id !== id);
         renderList();
         if (document.querySelector('.heatmap-panel').classList.contains('visible')) updateHeatmap();
       }
