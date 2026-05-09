@@ -1426,6 +1426,13 @@
       .tt {
         max-width: calc(100vw - 24px);
       }
+
+      select,
+      input[type=number],
+      .ex-search-input {
+        font-size: 16px;
+      }
+      
     }
   </style>
 </head>
@@ -1747,9 +1754,15 @@
 
     <!-- ── Mobile navigation ────────────────────────────────────── -->
     <nav class="mobile-nav" id="mobileNav">
-      <button class="mobile-nav-btn active" data-view="input" onclick="setMobileView('input')">...</button>
+      <button class="mobile-nav-btn active" data-view="input" onclick="setMobileView('input')">
+        <span class="nav-icon">⌨</span>
+        Input
+      </button>
       <div class="mobile-nav-divider"></div>
-      <button class="mobile-nav-btn" data-view="results" onclick="setMobileView('results')">...</button>
+      <button class="mobile-nav-btn" data-view="results" onclick="setMobileView('results')">
+        <span class="nav-icon">◈</span>
+        Results
+      </button>
     </nav>
 
     <script>
