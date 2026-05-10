@@ -22,10 +22,11 @@ import sys, re, json, os
 
 # ── Locate project files ──────────────────────────────────────────────────────
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT  = os.path.dirname(SCRIPT_DIR)
 sys.path.insert(0, SCRIPT_DIR)
 
 TEMPLATE_PATH = os.path.join(SCRIPT_DIR, 'HeatmapFirstDraftSite.html')
-OUTPUT_PATH   = os.path.join(SCRIPT_DIR, 'index.html')
+OUTPUT_PATH   = os.path.join(PROJECT_ROOT, 'index.html')
 
 # ── Import data from Python files ─────────────────────────────────────────────
 try:
